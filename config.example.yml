@@ -1,0 +1,25 @@
+#configuration for VCard script that converts a Google spreadsheet to 
+#VCards. These vcards can easily be imported into an address book
+
+# key from your spreadsheet. In the URL, its the part that says "key= ..."
+# example: if the URL is https://docs.google.com//spreadsheet/ccc?key=AaaaaaaaaBcccccc&hl=da#gid=0
+# then the key is exactly: "AaaaaaaaaBcccccc"
+
+
+spreadsheet_key: 0AjZ_WIj_lIQZdFdBUVZQcTR3VjhFclRwNEk1aTBpVmc
+
+
+# account name from the google account (needed to log into a private spreadsheet)
+# this must be a fully qualified google name like: "adam@gmail.com", or it could
+# be any email address like "adam@example.com" (in case that is a Google Apps account)
+
+account: example@gmail.com
+# account name from the google account (needed to log into a private spreadsheet)
+
+
+# for now the password must be put here in clear text. 
+# I will happily accept patches to improve this.
+# remember to put your password in "quotes" if it contains special characters.
+# Example: Passwords like pass#4 or hello!world should be quoted
+account_password: "my_google_password"
+
