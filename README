@@ -2,5 +2,12 @@ Created by Jesper Rønn-Jensen 2012-02-06
 
 
 
-Creates VCards from a google spreadsheet
+Script to create VCards from a google spreadsheet, for easy import into Adress book, iPhone, etc.
+
+USAGE
+=====
+
+
+ 1. Run `bundle install` (to install dependencies) -- first time only!
+ 2. Run the script with `ruby build.rb` 
 
