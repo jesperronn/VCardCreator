@@ -155,7 +155,7 @@ class Worksheeter
 
 
     #range of content rows: (index is 1-based)
-    @content = (2..40)
+    @content = (3..40)
 
     @ws = config.get_worksheet
     @config =config
