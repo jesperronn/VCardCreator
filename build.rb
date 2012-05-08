@@ -15,11 +15,13 @@ class Conf
   @@columns  = {
     :first_name =>  1,
     :last_name  =>  2,
-    :phone      =>  9,
-    :email      => 11,
-    :skype      =>  6,
-    :jabber     =>  7,
-    :twitter    =>  8
+    :phone      =>  10,
+    :alt_phone  =>  11,
+    :email      => 13,
+    :skype      =>  7,
+    :jabber     =>  8,
+    :twitter    =>  9
+    
   }
 
   def initialize
@@ -45,7 +47,7 @@ class Contact
   @@email_suffix = "@nineconsult.dk"
   @@org          = "NineConsult A/S"
 
-  attr_accessor :name, :first_name, :last_name, :phone, :skype, :jabber,:twitter, :org
+  attr_accessor :name, :first_name, :last_name, :phone, :alt_phone, :skype, :jabber,:twitter, :org
   #initialize a contact with with values from the worksheet row
 
   def initialize(config, ws, row)
@@ -57,11 +59,17 @@ class Contact
     @last_name  = ws[row, idx[:last_name]]
     @name       = "#{@first_name} #{@last_name}"
     @phone      = ws[row, idx[:phone]]
+    @alt_phone  = ws[row, idx[:alt_phone]]
     @email      = ws[row, idx[:email]]
     @skype      = ws[row, idx[:skype]]
     @jabber     = ws[row, idx[:jabber]]
     @twitter    = ws[row, idx[:twitter]]
     @org        = @@org
+  end
+
+  #valid contacts must have name and email present
+  def valid?
+    !(@email.empty? || @first_name.empty? || @last_name.empty?)
   end
 
 
@@ -109,6 +117,14 @@ class VCard
     end
   end
 
+  def alt_phone
+    if @contact.alt_phone.empty?
+      ""
+    else
+      "TEL;type=HOME;type=VOICE:#{@@country_code} #{@contact.alt_phone}\n"
+    end
+
+  end
 
   def to_vcard()
 
@@ -118,7 +134,7 @@ class VCard
                     N:#{@contact.last_name};#{@contact.first_name};;;
                     FN: #{@contact.name}
                     ORG:#{@contact.org}
-                    TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}
+                    TEL;type=WORK;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}
                     EMAIL:#{@contact.email}
                     PHOTO:#{@contact.photo}
                     ENDVCARD
@@ -128,7 +144,7 @@ class VCard
     last_part    = <<-ENDVCARD.gsub(/^\s+/, "")
                     END:VCARD
                     ENDVCARD
-    first_part + twitter + skype + last_part
+    first_part + alt_phone + twitter + skype + last_part
   end
 
 end
@@ -139,9 +155,9 @@ class Worksheeter
 
 
     #range of content rows: (index is 1-based)
-    @content = (3..20)
+    @content = (2..40)
 
-    @ws =config.get_worksheet
+    @ws = config.get_worksheet
     @config =config
 
     FileUtils.mkdir_p 'vcards'
@@ -153,9 +169,14 @@ class Worksheeter
       contact = Contact.new(@config, @ws, row)
      # p contact.name
 
-      filename = "vcards/#{row}_#{contact.name}.vcf"
-      File.open(filename, "w") do |f|     
-        f.write( VCard.new(contact).to_vcard() )
+      
+      #only create vcards for the "valid" rows in spreadsheet:
+      #valid contacts must have name and email present
+      if contact.valid?
+        filename = "vcards/#{row}_#{contact.name}.vcf"
+        File.open(filename, "w") do |f|     
+          f.write( VCard.new(contact).to_vcard() )
+        end
       end
     end
   end
