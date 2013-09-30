@@ -16,12 +16,12 @@ class Conf
   @@columns  = {
     :first_name =>  1,
     :last_name  =>  2,
-    :phone      =>  10,
-    :alt_phone  =>  11,
-    :email      => 13,
-    :skype      =>  7,
-    :jabber     =>  8,
-    :twitter    =>  9
+    :phone      =>  13,
+    :alt_phone  =>  14,
+    :email      =>  16,
+    :skype      =>  10,
+    :jabber     =>  11,
+    :twitter    =>  12
     
   }
 
