@@ -22,7 +22,6 @@ class Conf
     :skype      =>  10,
     :jabber     =>  11,
     :twitter    =>  12
-    
   }
 
   def initialize
@@ -45,8 +44,9 @@ class Conf
 end
 
 class Contact
-  @@email_suffix = "@nineconsult.dk"
-  @@org          = "NineConsult A/S"
+  @@org                   = "NineConsult A/S"
+  @@email_suffix          = "@nineconsult.dk"
+  @@gravatar_email_suffix = "@nine.dk"
 
   attr_accessor :name, :first_name, :last_name, :phone, :alt_phone, :skype, :jabber,:twitter, :org
   #initialize a contact with with values from the worksheet row
@@ -76,8 +76,9 @@ class Contact
 
   #returns a gravatar url based on the email address
   def photo
-    mail_hash = Digest::MD5.hexdigest(@email.strip.downcase)
-    "http://www.gravatar.com/avatar/#{mail_hash}?s=120"
+    mail_nine_dk = @email.strip.downcase + @@gravatar_email_suffix
+    mail_hash = Digest::MD5.hexdigest(mail_nine_dk)
+    "http://www.gravatar.com/avatar/#{mail_hash}?s=150"
   end
 
   #returns full email address
@@ -135,7 +136,7 @@ class VCard
                     N:#{@contact.last_name};#{@contact.first_name};;;
                     FN: #{@contact.name}
                     ORG:#{@contact.org}
-                    TEL;type=WORK;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}
+                    TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}
                     EMAIL:#{@contact.email}
                     PHOTO:#{@contact.photo}
                     ENDVCARD
@@ -170,12 +171,12 @@ class Worksheeter
       contact = Contact.new(@config, @ws, row)
      # p contact.name
 
-      
+
       #only create vcards for the "valid" rows in spreadsheet:
       #valid contacts must have name and email present
       if contact.valid?
         filename = "vcards/#{row}_#{contact.name}.vcf"
-        File.open(filename, "w") do |f|     
+        File.open(filename, "w") do |f|
           f.write( VCard.new(contact).to_vcard() )
         end
       end
