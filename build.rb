@@ -7,10 +7,11 @@ require 'digest/md5'
 require 'yaml'
 
 class Conf
-#  attr_accessor :worksheet
+  attr_accessor :start_row, :worksheet
   #raw_config = File.read("config.yml")
   APP_CONFIG = YAML.load_file("config.yml")
   #p APP_CONFIG
+
 
   #columns for this spreadsheet
   @@columns  = {
@@ -32,10 +33,8 @@ class Conf
     #retrieve the worksheet
     @worksheet = session.spreadsheet_by_key(APP_CONFIG["spreadsheet_key"]).worksheets[0]
 
-  end
-
-  def get_worksheet
-    @worksheet
+    #first content rows: (index is 1-based)
+    @start_row = 3
   end
 
   def get_columns
@@ -48,7 +47,7 @@ class Contact
   @@email_suffix          = "@nineconsult.dk"
   @@gravatar_email_suffix = "@nine.dk"
 
-  attr_accessor :name, :first_name, :last_name, :phone, :alt_phone, :skype, :jabber,:twitter, :org
+  attr_accessor :name, :first_name, :last_name, :phone, :alt_phone, :skype, :jabber, :twitter, :org
   #initialize a contact with with values from the worksheet row
 
   def initialize(config, ws, row)
@@ -157,17 +156,18 @@ class Worksheeter
 
 
     #range of content rows: (index is 1-based)
-    @content = (3..40)
+    require 'pp'
+    pp config
 
-    @ws = config.get_worksheet
-    @config =config
+    @ws = config.worksheet
+    @config = config
 
     FileUtils.mkdir_p 'vcards'
   end
 
-  def run()
+  def generate_vcards()
     #debugstuff()
-    for row in @content.min..@ws.num_rows
+    for row in get_items
       contact = Contact.new(@config, @ws, row)
      # p contact.name
 
@@ -183,7 +183,9 @@ class Worksheeter
     end
   end
 
-
+  def get_items
+    @config.start_row..@ws.num_rows
+  end
 
 
 end
@@ -191,4 +193,6 @@ end
 
 
 config = Conf.new
-Worksheeter.new(config).run()
+ws = Worksheeter.new(config)
+
+ws.generate_vcards()
