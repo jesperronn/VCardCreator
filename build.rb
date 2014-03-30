@@ -7,7 +7,7 @@ require 'digest/md5'
 require 'yaml'
 
 class Conf
-  attr_accessor :start_row, :worksheet
+  attr_accessor :start_row, :worksheet, :resigned_contacts
   #raw_config = File.read("config.yml")
   APP_CONFIG = YAML.load_file("config.yml")
   #p APP_CONFIG
@@ -35,6 +35,10 @@ class Conf
 
     #first content rows: (index is 1-based)
     @start_row = 3
+
+    ## initials of resigned employees -- will be ignored and not generated
+    @resigned_contacts     = %w(thm mbw el pfa)
+
   end
 
   def get_columns
@@ -47,7 +51,7 @@ class Contact
   @@email_suffix          = "@nineconsult.dk"
   @@gravatar_email_suffix = "@nineconsult.dk"
 
-  attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone, :skype, :jabber, :twitter, :org
+  attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone, :skype, :jabber, :twitter, :org, :resigned
   #initialize a contact with with values from the worksheet row
 
   def initialize(config, ws, row)
@@ -66,13 +70,14 @@ class Contact
     @jabber     = ws[row, idx[:jabber]]
     @twitter    = ws[row, idx[:twitter]]
     @org        = @@org
+
+    @resigned = config.resigned_contacts.include? @initials
   end
 
   #valid contacts must have name and email present
   def valid?
     !(@initials.empty? || @first_name.empty? || @last_name.empty?)
   end
-
 
   #returns a gravatar url based on the email address
   def photo_url
@@ -119,6 +124,14 @@ class VCard
     end
   end
 
+  def phone
+    if @contact.phone.empty?
+      "TEL;type=CELL;type=VOICE:"
+    else
+      "TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}"
+    end
+  end
+
   def alt_phone
     if @contact.alt_phone.empty?
       ""
@@ -145,7 +158,7 @@ class VCard
                     N:#{@contact.last_name};#{@contact.first_name};;;
                     FN: #{@contact.name}
                     ORG:#{@contact.org}
-                    TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}
+                    #{phone}
                     EMAIL:#{@contact.email}
                     PHOTO;ENCODING=b;TYPE=JPEG:#{photo}
                     ENDVCARD
@@ -179,7 +192,7 @@ class Worksheeter
 
       #only create vcards for the "valid" rows in spreadsheet:
       #valid contacts must have name and email present
-      if contact.valid?
+      if contact.valid? && !contact.resigned
         filename = "vcards/#{row}_#{contact.name}.vcf"
         File.open(filename, "w") do |f|
           f.write( VCard.new(contact).to_vcard() )
@@ -199,6 +212,10 @@ class Worksheeter
     end
   end
 
+  def zip_folder
+    %x(zip vcards-#{ Date.today.to_s  }.zip vcards)
+  end
+
   def get_items
     @config.start_row..@ws.num_rows
   end
@@ -212,3 +229,4 @@ config = Conf.new
 ws = Worksheeter.new(config)
 ws.fetch_photos
 ws.generate_vcards
+ws.zip_folder
