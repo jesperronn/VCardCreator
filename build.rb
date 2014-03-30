@@ -45,7 +45,7 @@ end
 class Contact
   @@org                   = "NineConsult A/S"
   @@email_suffix          = "@nineconsult.dk"
-  @@gravatar_email_suffix = "@nine.dk"
+  @@gravatar_email_suffix = "@nineconsult.dk"
 
   attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone, :skype, :jabber, :twitter, :org
   #initialize a contact with with values from the worksheet row
@@ -128,7 +128,7 @@ class VCard
   end
 
   def photo
-    filename = "vcards/.photo_cache/#{@contact.initials}.jpg"
+    filename = ".photo_cache/#{@contact.initials}.jpg"
     #puts "#{@contact.initials} exists? #{File.exists?(filename)}"
     if File.exists?(filename)
       file_contents = File.read(filename)
@@ -166,7 +166,8 @@ class Worksheeter
     @ws = config.worksheet
     @config = config
 
-    FileUtils.mkdir_p 'vcards/.photo_cache'
+    FileUtils.mkdir_p 'vcards'
+    FileUtils.mkdir_p '.photo_cache'
   end
 
   def generate_vcards
@@ -193,7 +194,7 @@ class Worksheeter
       contact = Contact.new(@config, @ws, row)
       if contact.valid?
         puts "fetching #{contact.initials}: #{contact.photo_url}"
-        %x(curl -s #{contact.photo_url} > vcards/.photo_cache/#{contact.initials}.jpg )
+        %x(curl -s #{contact.photo_url} > .photo_cache/#{contact.initials}.jpg )
       end
     end
   end
