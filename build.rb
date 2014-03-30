@@ -213,7 +213,7 @@ class Worksheeter
   end
 
   def zip_folder
-    %x(zip vcards-#{ Date.today.to_s  }.zip vcards)
+    %x(zip -9 vcards-#{ Date.today.to_s  }.zip vcards/* )
   end
 
   def get_items
