@@ -47,7 +47,7 @@ class Contact
   @@email_suffix          = "@nineconsult.dk"
   @@gravatar_email_suffix = "@nine.dk"
 
-  attr_accessor :name, :first_name, :last_name, :phone, :alt_phone, :skype, :jabber, :twitter, :org
+  attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone, :skype, :jabber, :twitter, :org
   #initialize a contact with with values from the worksheet row
 
   def initialize(config, ws, row)
@@ -58,6 +58,7 @@ class Contact
     @first_name = ws[row, idx[:first_name]]
     @last_name  = ws[row, idx[:last_name]]
     @name       = "#{@first_name} #{@last_name}"
+    @initials   = ws[row, idx[:email]]
     @phone      = ws[row, idx[:phone]]
     @alt_phone  = ws[row, idx[:alt_phone]]
     @email      = ws[row, idx[:email]]
@@ -69,12 +70,12 @@ class Contact
 
   #valid contacts must have name and email present
   def valid?
-    !(@email.empty? || @first_name.empty? || @last_name.empty?)
+    !(@initials.empty? || @first_name.empty? || @last_name.empty?)
   end
 
 
   #returns a gravatar url based on the email address
-  def photo
+  def photo_url
     mail_nine_dk = @email.strip.downcase + @@gravatar_email_suffix
     mail_hash = Digest::MD5.hexdigest(mail_nine_dk)
     "http://www.gravatar.com/avatar/#{mail_hash}?s=150"
@@ -124,11 +125,20 @@ class VCard
     else
       "TEL;type=HOME;type=VOICE:#{@@country_code} #{@contact.alt_phone}\n"
     end
+  end
 
+  def photo
+    filename = "vcards/.photo_cache/#{@contact.initials}.jpg"
+    #puts "#{@contact.initials} exists? #{File.exists?(filename)}"
+    if File.exists?(filename)
+      file_contents = File.read(filename)
+      Base64.strict_encode64(file_contents)
+      #file_contents.split('\n').each{|line| line.prepend(' ')}
+    end
   end
 
   def to_vcard()
-
+    #debugger
     first_part    = <<-ENDVCARD.gsub(/^\s+/, "")
                     BEGIN:VCARD
                     VERSION:3.0
@@ -137,12 +147,12 @@ class VCard
                     ORG:#{@contact.org}
                     TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}
                     EMAIL:#{@contact.email}
-                    PHOTO:#{@contact.photo}
+                    PHOTO;ENCODING=b;TYPE=JPEG:#{photo}
                     ENDVCARD
 
 
 
-    last_part    = <<-ENDVCARD.gsub(/^\s+/, "")
+    last_part    = <<-ENDVCARD.gsub(/^\s+/, '')
                     END:VCARD
                     ENDVCARD
     first_part + alt_phone + twitter + skype + last_part
@@ -153,19 +163,13 @@ end
 class Worksheeter
 
   def initialize(config)
-
-
-    #range of content rows: (index is 1-based)
-    require 'pp'
-    pp config
-
     @ws = config.worksheet
     @config = config
 
-    FileUtils.mkdir_p 'vcards'
+    FileUtils.mkdir_p 'vcards/.photo_cache'
   end
 
-  def generate_vcards()
+  def generate_vcards
     #debugstuff()
     for row in get_items
       contact = Contact.new(@config, @ws, row)
@@ -183,6 +187,17 @@ class Worksheeter
     end
   end
 
+  def fetch_photos
+
+    for row in get_items
+      contact = Contact.new(@config, @ws, row)
+      if contact.valid?
+        puts "fetching #{contact.initials}: #{contact.photo_url}"
+        %x(curl -s #{contact.photo_url} > vcards/.photo_cache/#{contact.initials}.jpg )
+      end
+    end
+  end
+
   def get_items
     @config.start_row..@ws.num_rows
   end
@@ -194,5 +209,5 @@ end
 
 config = Conf.new
 ws = Worksheeter.new(config)
-
-ws.generate_vcards()
+ws.fetch_photos
+ws.generate_vcards
