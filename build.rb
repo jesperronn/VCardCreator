@@ -17,6 +17,7 @@ class Conf
   @@columns  = {
     :first_name =>  1,
     :last_name  =>  2,
+    :birthday   =>  3,
     :phone      =>  13,
     :alt_phone  =>  14,
     :email      =>  16,
@@ -54,7 +55,7 @@ class Contact
   @@email_suffix          = "@nineconsult.dk"
   @@gravatar_email_suffix = "@nineconsult.dk"
 
-  attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone, :skype, :jabber, :twitter, :org, :resigned
+  attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone, :skype, :jabber, :twitter, :birthday, :org, :resigned
   #initialize a contact with with values from the worksheet row
 
   def initialize(config, ws, row)
@@ -72,6 +73,7 @@ class Contact
     @skype      = ws[row, idx[:skype]]
     @jabber     = ws[row, idx[:jabber]]
     @twitter    = ws[row, idx[:twitter]]
+    @birthday   = ws[row, idx[:birthday]]
     @org        = @@org
 
     @resigned = config.resigned_contacts.include? @initials
@@ -109,38 +111,35 @@ class VCard
   def twitter
     #remember to remove any @-signs from the twitter name in url
     twit_url ="http://twitter.com/#!/#{@contact.twitter.gsub(/^\@/, "")}"
-    if @contact.twitter.empty?
-      ""
-      else
-      "X-SOCIALPROFILE;type=twitter:#{twit_url}\n"
-    end
+    return "" if @contact.twitter.empty?
+
+    "X-SOCIALPROFILE;type=twitter:#{twit_url}\n"
   end
 
 
   def skype
-    if @contact.skype.empty?
-      ""
-    else
-      #"X-SERVICE-SKYPE:Skype:#{@contact.skype}\n"
-      "item1.IMPP;X-SERVICE-TYPE=Skype:skype:#{@contact.skype}\n"
+    return "" if @contact.skype.empty?
 
-    end
+    #"X-SERVICE-SKYPE:Skype:#{@contact.skype}\n"
+    "item1.IMPP;X-SERVICE-TYPE=Skype:skype:#{@contact.skype}\n"
   end
 
   def phone
-    if @contact.phone.empty?
-      "TEL;type=CELL;type=VOICE:"
-    else
-      "TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}"
-    end
+    return "TEL;type=CELL;type=VOICE:" if @contact.phone.empty?
+
+    "TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}"
   end
 
   def alt_phone
-    if @contact.alt_phone.empty?
-      ""
-    else
-      "TEL;type=HOME;type=VOICE:#{@@country_code} #{@contact.alt_phone}\n"
-    end
+    return "" if @contact.alt_phone.empty?
+
+    "TEL;type=HOME;type=VOICE:#{@@country_code} #{@contact.alt_phone}\n"
+  end
+
+  def birthday
+    return "" if @contact.birthday.empty?
+
+    "BDAY:#{ Date.parse(@contact.birthday).to_s }"
   end
 
   def photo
@@ -163,6 +162,7 @@ class VCard
                     ORG:#{@contact.org}
                     #{phone}
                     EMAIL:#{@contact.email}
+                    #{birthday}
                     PHOTO;ENCODING=b;TYPE=JPEG:#{photo}
                     ENDVCARD
 
