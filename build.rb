@@ -1,17 +1,17 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
-require "rubygems"
-require "google_spreadsheet"
+require 'rubygems'
+require 'google_spreadsheet'
 require 'fileutils'
 require 'digest/md5'
 require 'yaml'
+require 'pp'
 
 class Conf
-  attr_accessor :start_row, :worksheet, :resigned_contacts
-  #raw_config = File.read("config.yml")
+  attr_accessor :start_row, :worksheet, :resigned_contacts, :zip_file_name
+  #APP_config contains username/password to Google account
   APP_CONFIG = YAML.load_file("config.yml")
-  #p APP_CONFIG
-
+  #pp APP_CONFIG
 
   #columns for this spreadsheet
   @@columns  = {
@@ -38,6 +38,9 @@ class Conf
 
     ## initials of resigned employees -- will be ignored and not generated
     @resigned_contacts     = %w(thm mbw el pfa)
+
+
+    @zip_file_name = 'nineconsult-vcards'
 
   end
 
@@ -213,7 +216,7 @@ class Worksheeter
   end
 
   def zip_folder
-    %x(zip -9 vcards-#{ Date.today.to_s  }.zip vcards/* )
+    %x(zip -9 #{ @config.zip_file_name }-#{ Date.today.to_s  }.zip vcards/* )
   end
 
   def get_items
@@ -225,8 +228,7 @@ end
 
 
 
-config = Conf.new
-ws = Worksheeter.new(config)
+ws = Worksheeter.new(Conf.new)
 ws.fetch_photos
 ws.generate_vcards
 ws.zip_folder
