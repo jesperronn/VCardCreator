@@ -13,17 +13,18 @@ class Conf
   APP_CONFIG = YAML.load_file("config.yml")
   #pp APP_CONFIG
 
-  #columns for this spreadsheet
+  #columns for this spreadsheet (1-index)
   @@columns  = {
-    :first_name =>  1,
-    :last_name  =>  2,
-    :birthday   =>  3,
-    :phone      =>  13,
-    :alt_phone  =>  14,
-    :email      =>  16,
-    :skype      =>  10,
-    :jabber     =>  11,
-    :twitter    =>  12
+    :first_name =>  2,
+    :last_name  =>  3,
+    :birthday   =>  4,
+    :phone      =>  14,
+    :alt_phone  =>  15,
+    :email      =>  17,
+    :skype      =>  11,
+    :jabber     =>  12,
+    :twitter    =>  13
+    #todo add employment date
   }
 
   def initialize
@@ -196,7 +197,7 @@ class Worksheeter
       #only create vcards for the "valid" rows in spreadsheet:
       #valid contacts must have name and email present
       if contact.valid? && !contact.resigned
-        filename = "vcards/#{row}_#{contact.name}.vcf"
+        filename = "vcards/#{contact.name}.vcf"
         File.open(filename, "w") do |f|
           f.write( VCard.new(contact).to_vcard() )
         end
