@@ -158,8 +158,8 @@ class VCard
     first_part    = <<-ENDVCARD.gsub(/^\s+/, "")
                     BEGIN:VCARD
                     VERSION:3.0
-                    N:#{@contact.last_name};#{@contact.first_name};;;
-                    FN: #{@contact.name}
+                    N;CHARSET=iso-8859-1:#{@contact.last_name};#{@contact.first_name};;;
+                    FN;CHARSET=iso-8859-1: #{@contact.name}
                     ORG:#{@contact.org}
                     #{phone}
                     EMAIL:#{@contact.email}
@@ -198,7 +198,7 @@ class Worksheeter
       #valid contacts must have name and email present
       if contact.valid? && !contact.resigned
         filename = "vcards/#{contact.name}.vcf"
-        File.open(filename, "w") do |f|
+        File.open(filename, "w",  external_encoding: Encoding::ISO_8859_1) do |f|
           f.write( VCard.new(contact).to_vcard() )
         end
       end
