@@ -6,6 +6,7 @@ require 'fileutils'
 require 'digest/md5'
 require 'yaml'
 require 'pp'
+require 'i18n'
 
 class Conf
   attr_accessor :start_row, :worksheet, :resigned_contacts, :zip_file_name
@@ -187,6 +188,12 @@ class Worksheeter
     FileUtils.mkdir_p '.photo_cache'
   end
 
+  def filename(contact_name)
+    I18n.enforce_available_locales = false
+    I18n.locale = :da
+    I18n.transliterate contact_name
+  end
+
   def generate_vcards
     #debugstuff()
     for row in get_items
@@ -197,7 +204,7 @@ class Worksheeter
       #only create vcards for the "valid" rows in spreadsheet:
       #valid contacts must have name and email present
       if contact.valid? && !contact.resigned
-        filename = "vcards/#{contact.name}.vcf"
+        filename = "vcards/#{filename(contact.name)}.vcf"
         File.open(filename, "w",  external_encoding: Encoding::ISO_8859_1) do |f|
           f.write( VCard.new(contact).to_vcard() )
         end
