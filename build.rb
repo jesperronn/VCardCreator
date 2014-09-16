@@ -4,16 +4,18 @@ require 'rubygems'
 require 'google_spreadsheet'
 require 'fileutils'
 require 'digest/md5'
+require 'erb'
 require 'yaml'
 require 'pp'
 require 'i18n'
 
+# Configuration class takes care of all config
 class Conf
-  attr_accessor :columns, :start_row, :worksheet, :resigned_contacts, :zip_file_name
+  attr_accessor :columns, :start_row, :worksheet, :resigned_contacts,
+                :spreadsheet_key, :zip_file_name
   # APP_config contains username/password to Google account
   APP_CONFIG = YAML.load_file('config.yml')
   # pp APP_CONFIG
-
 
   def initialize
     # columns for this spreadsheet (1-index)
@@ -34,7 +36,8 @@ class Conf
     session = GoogleSpreadsheet.login(APP_CONFIG['account'], APP_CONFIG['account_password'])
 
     # retrieve the worksheet
-    @worksheet = session.spreadsheet_by_key(APP_CONFIG['spreadsheet_key']).worksheets[0]
+    @spreadsheet_key = APP_CONFIG['spreadsheet_key']
+    @worksheet = session.spreadsheet_by_key(@spreadsheet_key).worksheets[0]
 
     # first content rows: (index is 1-based)
     @start_row = 3
@@ -168,6 +171,8 @@ class VCard
   end
 end
 
+# Worksheeter class reads configuration, and employees.
+# Then it generates a vcard for each employee
 class Worksheeter
   def initialize(config)
     @ws = config.worksheet
@@ -200,6 +205,7 @@ class Worksheeter
     end
   end
 
+  # fetching the Gravatar fotos for each email address in <tt>gravatar_email_suffix</tt>
   def fetch_photos
     employee_rows.each do |row|
       contact = Contact.new(@config, @ws, row)
@@ -207,6 +213,18 @@ class Worksheeter
         puts "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .photo_cache/#{contact.initials}.jpg `
       end
+    end
+  end
+
+  def build_instructions
+    filename    = 'INSTRUCTIONS.erb.md'
+    erb_binding = binding
+    @spreadsheet_key = @config.spreadsheet_key
+    template = ERB.new(File.read(filename), nil, '<>')
+    contents = template.result(erb_binding)
+
+    File.open("vcards/#{filename.gsub('erb.', '')}", 'w') do |f|
+      f.write(contents)
     end
   end
 
@@ -219,10 +237,8 @@ class Worksheeter
   end
 end
 
-cn = Conf.new
-puts cn.columns
-
 ws = Worksheeter.new(Conf.new)
 ws.fetch_photos
 ws.generate_vcards
+ws.build_instructions
 ws.zip_folder
