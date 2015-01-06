@@ -20,15 +20,15 @@ class Conf
   def initialize
     # columns for this spreadsheet (1-index)
     @columns  = {
-      first_name: 2,
-      last_name:  3,
-      birthday:   4,
-      phone:     14,
-      alt_phone: 15,
-      email:     17,
-      skype:     11,
-      jabber:    12,
-      twitter:   13
+      first_name: 3,
+      last_name:  4,
+      birthday:   5,
+      phone:     15,
+      alt_phone: 16,
+      email:     18,
+      skype:     12,
+      jabber:    13,
+      twitter:   14
       # TODO: add employment date
     }
     # Logs in.
