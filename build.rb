@@ -8,14 +8,34 @@ require 'erb'
 require 'yaml'
 require 'pp'
 require 'i18n'
+require 'optparse'
+
+# log via this class
+# USAGE
+#
+# Logger.allow_debug = true # set this once
+#
+# Logger.info "text to log"
+#
+class Logger
+  class << self
+    attr_accessor :allow_debug, :allow_info
+    def info(s)
+      puts "[INFO]  " << s if allow_info
+    end
+
+    def debug(s)
+      puts "[DEBUG] " << s if allow_debug
+    end
+  end
+end
+
 
 # Configuration class takes care of all config
 class Conf
+  Logger.info "Loading config from file"
   attr_accessor :columns, :start_row, :worksheet, :resigned_contacts,
                 :spreadsheet_key, :zip_file_name
-  # APP_config contains username/password to Google account
-  APP_CONFIG = YAML.load_file('config.yml')
-  # pp APP_CONFIG
 
   def initialize
     # columns for this spreadsheet (1-index)
@@ -31,13 +51,25 @@ class Conf
       jabber:     28,
       twitter:    29
     }
+
+    # APP_config contains username/password to Google account
+    conf = YAML.load_file('config.yml')
+    Logger.info "loaded config (#{conf.size} lines)"
+    Logger.debug conf.inspect
+
     # Logs in.
     # You can also use OAuth. See document of GoogleSpreadsheet.login_with_oauth for details.
-    session = GoogleSpreadsheet.login(APP_CONFIG['account'], APP_CONFIG['account_password'])
+    Logger.info "logs in for #{conf['account']}"
+    session = GoogleSpreadsheet.login(conf['account'], conf['account_password'])
 
-    # retrieve the worksheet
-    @spreadsheet_key = APP_CONFIG['spreadsheet_key']
+    Logger.info "retrieve the worksheet"
+    @spreadsheet_key = conf['spreadsheet_key']
     @worksheet = session.spreadsheet_by_key(@spreadsheet_key).worksheets[0]
+    Logger.info "done"
+
+    Logger.info "Worksheet title: #{@worksheet.title}"
+    Logger.debug "Worksheet contents\n=================="
+    Logger.debug @worksheet.inspect
 
     # first content rows: (index is 1-based)
     @start_row = 3
@@ -58,6 +90,7 @@ class Contact
   attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone,
                 :skype, :jabber, :twitter, :birthday, :org, :resigned
   # initialize a contact with with values from the worksheet row
+  alias :resigned? :resigned
 
   def initialize(config, ws, row)
     idx = config.columns
@@ -95,6 +128,14 @@ class Contact
   # returns full email address
   def email
     @email + @@email_suffix
+  end
+
+  def pretty_print
+    out = '#<' << self.class.to_s
+    %i(first_name last_name initials email).each do |prop|
+      out << ' @' << "#{prop.to_s}='#{self.send prop}'"
+    end
+    out << ">"
   end
 end
 
@@ -196,7 +237,10 @@ class Worksheeter
 
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
-      next unless contact.valid? && !contact.resigned
+      Logger.info "Skipping invalid contact: #{contact.pretty_print}" unless contact.valid?
+      Logger.info "Skipping resigned contact: #{contact.pretty_print}" if  contact.resigned?
+
+      next unless contact.valid? && !contact.resigned?
 
       filename = "vcards/#{filename(contact.name)}.vcf"
       File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
@@ -237,8 +281,39 @@ class Worksheeter
   end
 end
 
-ws = Worksheeter.new(Conf.new)
-ws.fetch_photos
-ws.generate_vcards
-ws.build_instructions
-ws.zip_folder
+# slurp command line options and build the vcards
+class VcardBuilder
+  def initialize
+    options = {}
+    optparse = OptionParser.new do|opts|
+      # Set a banner, displayed at the top of the help screen.
+      opts.banner = "Usage: .build.rb [options] "
+      options[:verbose] = false
+      opts.on('-v', '--verbose', 'Output more information') do
+        options[:verbose] = true
+      end
+      opts.on('--debug', 'Output even more information') do
+        options[:verbose] = true
+        options[:debug] = true
+      end
+    end
+
+    # parse the command line arguments
+    optparse.parse!
+
+    Logger.allow_info = options[:verbose]
+    Logger.allow_debug = options[:debug]
+
+    Logger.info "Verbose setting selected. Writing extra info"
+    Logger.debug "Even more verbose setting selected. Writing even more info"
+
+    conf = Conf.new
+    ws = Worksheeter.new(conf)
+    ws.fetch_photos
+    ws.generate_vcards
+    ws.build_instructions
+    ws.zip_folder
+  end
+end
+
+VcardBuilder.new
