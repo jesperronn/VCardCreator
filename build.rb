@@ -20,16 +20,16 @@ class Conf
   def initialize
     # columns for this spreadsheet (1-index)
     @columns  = {
-      first_name: 3,
-      last_name:  4,
-      birthday:   5,
-      phone:     15,
-      alt_phone: 16,
-      email:     18,
-      skype:     12,
-      jabber:    13,
-      twitter:   14
-      # TODO: add employment date
+      first_name:  4,
+      last_name:   5,
+      birthday:    7,
+      phone:      14,
+      alt_phone:  15,
+      email:       6,
+      start_date: 16,
+      skype:      27,
+      jabber:     28,
+      twitter:    29
     }
     # Logs in.
     # You can also use OAuth. See document of GoogleSpreadsheet.login_with_oauth for details.
