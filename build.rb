@@ -25,17 +25,17 @@ class Conf
   def initialize
     # columns for this spreadsheet (1-index) OR you can use letters :A-:Z
     @columns  = {
-      first_name:   4,
-      last_name:    5,
-      birthday:     7,
-      phone:       14,
-      alt_phone:   15,
-      email:        6,
-      start_date:  16,
-      resign_date: 17,
-      skype:       27,
-      jabber:      28,
-      twitter:     29,
+      first_name:  ColumnIndexConvert.convert(:D), #  4,
+      last_name:   ColumnIndexConvert.convert(:E), #  5,
+      birthday:    ColumnIndexConvert.convert(:G), #  7,
+      phone:       ColumnIndexConvert.convert(:N), # 14,
+      alt_phone:   ColumnIndexConvert.convert(:O), # 15,
+      email:       ColumnIndexConvert.convert(:F), #  6,
+      start_date:  ColumnIndexConvert.convert(:P), # 16,
+      resign_date: ColumnIndexConvert.convert(:Q), # 17,
+      skype:       ColumnIndexConvert.convert(:AE), # 27,
+      jabber:      ColumnIndexConvert.convert(:AF), # 28,
+      twitter:     ColumnIndexConvert.convert(:AG), # 29,
     }
     # first content rows: (index is 1-based)
     @start_row = 3
@@ -179,7 +179,7 @@ class Worksheeter
     employee_rows.each do |row|
       contact = Contact.new(@config, @ws, row)
       if contact.valid?
-        puts "fetching #{contact.initials}: #{contact.photo_url}"
+        Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .photo_cache/#{contact.initials}.jpg `
       end
     end
@@ -238,10 +238,14 @@ class VcardBuilder
 
     conf = Conf.new
     ws = Worksheeter.new(conf)
+    puts "Fetching photos.."
     ws.fetch_photos
+    puts "Generating vcards.."
     ws.generate_vcards
     ws.build_instructions
+    puts "Writing zip file.."
     ws.zip_folder
+    puts "Done"
   end
 end
 
