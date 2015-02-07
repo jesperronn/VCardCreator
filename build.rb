@@ -10,24 +10,10 @@ require 'pp'
 require 'i18n'
 require 'optparse'
 
-# log via this class
-# USAGE
-#
-# Logger.allow_debug = true # set this once
-#
-# Logger.info "text to log"
-#
-class Logger
-  class << self
-    attr_accessor :allow_debug, :allow_info
-    def info(s)
-      puts '[INFO]  ' << s if allow_info
-    end
-
-    def debug(s)
-      puts '[DEBUG] ' << s if allow_debug
-    end
-  end
+# load files in ./lib
+Dir[__dir__ + '/lib/*.rb'].each do |f|
+  filename = f.sub(__dir__,'.')
+  require_relative filename
 end
 
 # Configuration class takes care of all config
@@ -37,18 +23,19 @@ class Conf
                 :spreadsheet_key, :zip_file_name
 
   def initialize
-    # columns for this spreadsheet (1-index)
+    # columns for this spreadsheet (1-index) OR you can use letters :A-:Z
     @columns  = {
-      first_name:  4,
-      last_name:   5,
-      birthday:    7,
-      phone:      14,
-      alt_phone:  15,
-      email:       6,
-      start_date: 16,
-      skype:      27,
-      jabber:     28,
-      twitter:    29
+      first_name:   4,
+      last_name:    5,
+      birthday:     7,
+      phone:       14,
+      alt_phone:   15,
+      email:        6,
+      start_date:  16,
+      resign_date: 17,
+      skype:       27,
+      jabber:      28,
+      twitter:     29,
     }
     # first content rows: (index is 1-based)
     @start_row = 3
@@ -88,7 +75,7 @@ class Contact
   GRAVATAR_EMAIL_SUFFIX = '@nineconsult.dk'
 
   attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone,
-                :skype, :jabber, :twitter, :birthday, :org, :resigned
+                :skype, :jabber, :twitter, :birthday, :org, :resigned, :row_num
   # initialize a contact with with values from the worksheet row
   alias_method :resigned?, :resigned
 
@@ -109,6 +96,7 @@ class Contact
     @twitter    = ws[row, idx[:twitter]]
     @birthday   = ws[row, idx[:birthday]]
     @org        = ORG
+    @row_num    = row
 
     @resigned = config.resigned_contacts.include? @initials
   end
@@ -130,85 +118,23 @@ class Contact
     @email + EMAIL_SUFFIX
   end
 
-  def pretty_print
+  def pretty_print(format = :long)
     out = '#<' << self.class.to_s
-    %i(first_name last_name initials email).each do |prop|
+    props = case format
+            when :short
+              props = %i(initials name)
+            when :long
+              %i(first_name last_name initials email row_num)
+            else
+              fail RuntimeError "format #{format} not recognized"
+            end
+    props.each do |prop|
       out << ' @' << "#{prop}='#{send prop}'"
     end
     out << '>'
   end
 end
 
-# VCard class must contain the actual generation of the card.
-# it should read values from a Contact object
-class VCard
-  @country_code = '+45'
-
-  def initialize(contact)
-    @contact = contact
-  end
-
-  def twitter
-    # remember to remove any @-signs from the twitter name in url
-    twit_url = "http://twitter.com/#!/#{@contact.twitter.gsub(/^\@/, '')}"
-    return '' if @contact.twitter.empty?
-
-    "X-SOCIALPROFILE;type=twitter:#{twit_url}\n"
-  end
-
-  def skype
-    return '' if @contact.skype.empty?
-
-    # "X-SERVICE-SKYPE:Skype:#{@contact.skype}\n"
-    "item1.IMPP;X-SERVICE-TYPE=Skype:skype:#{@contact.skype}\n"
-  end
-
-  def phone
-    return 'TEL;type=CELL;type=VOICE:' if @contact.phone.empty?
-
-    "TEL;type=CELL;type=VOICE;type=pref:#{@country_code} #{@contact.phone}"
-  end
-
-  def alt_phone
-    return '' if @contact.alt_phone.empty?
-
-    "TEL;type=HOME;type=VOICE:#{@country_code} #{@contact.alt_phone}\n"
-  end
-
-  def birthday
-    return '' if @contact.birthday.empty?
-
-    "BDAY:#{ Date.parse(@contact.birthday) }"
-  end
-
-  def photo
-    filename = ".photo_cache/#{@contact.initials}.jpg"
-    # puts "#{@contact.initials} exists? #{File.exists?(filename)}"
-    return unless File.exist?(filename)
-    file_contents = File.read(filename)
-    Base64.strict_encode64(file_contents)
-  end
-
-  def to_vcard
-    # debugger
-    first_part  = <<-ENDVCARD.gsub(/^\s+/, '')
-                  BEGIN:VCARD
-                  VERSION:3.0
-                  N;CHARSET=iso-8859-1:#{@contact.last_name};#{@contact.first_name};;;
-                  FN;CHARSET=iso-8859-1: #{@contact.name}
-                  ORG:#{@contact.org}
-                  #{phone}
-                  EMAIL:#{@contact.email}
-                  #{birthday}
-                  PHOTO;ENCODING=b;TYPE=JPEG:#{photo}
-                  ENDVCARD
-
-    last_part = <<-ENDVCARD.gsub(/^\s+/, '')
-                END:VCARD
-                ENDVCARD
-    first_part + alt_phone + twitter + skype + last_part
-  end
-end
 
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
@@ -235,14 +161,15 @@ class Worksheeter
 
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
-      Logger.info "Skipping invalid contact: #{contact.pretty_print}" unless contact.valid?
-      Logger.info "Skipping resigned contact: #{contact.pretty_print}" if contact.resigned?
+      Logger.info "Skipping invalid: #{contact.pretty_print}" unless contact.valid?
+      Logger.info "Skipping resigned: #{contact.pretty_print}" if contact.resigned?
 
       next unless contact.valid? && !contact.resigned?
 
       filename = "vcards/#{filename(contact.name)}.vcf"
       File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
         f.write(VCard.new(contact).to_vcard)
+        Logger.info "wrote vcard for #{contact.pretty_print(:short)}"
       end
     end
   end
