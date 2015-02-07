@@ -84,7 +84,7 @@ end
 # Generates a Contact class for each employee
 class Contact
   @@org                   = 'NineConsult A/S'
-  @@email_suffix          = '@nineconsult.dk'
+  @@email_suffix          = '@nine.dk'
   @@gravatar_email_suffix = '@nineconsult.dk'
 
   attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone,
