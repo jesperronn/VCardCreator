@@ -10,67 +10,33 @@ require 'pp'
 require 'i18n'
 require 'optparse'
 
-# log via this class
-# USAGE
-#
-# Logger.allow_debug = true # set this once
-#
-# Logger.info "text to log"
-#
-class Logger
-  class << self
-    attr_accessor :allow_debug, :allow_info
-    def info(s)
-      puts "[INFO]  " << s if allow_info
-    end
-
-    def debug(s)
-      puts "[DEBUG] " << s if allow_debug
-    end
-  end
+# load files in ./lib
+Dir[__dir__ + '/lib/*.rb'].each do |f|
+  filename = f.sub(__dir__,'.')
+  require_relative filename
 end
-
 
 # Configuration class takes care of all config
 class Conf
-  Logger.info "Loading config from file"
+  Logger.info 'Loading config from file'
   attr_accessor :columns, :start_row, :worksheet, :resigned_contacts,
                 :spreadsheet_key, :zip_file_name
 
   def initialize
-    # columns for this spreadsheet (1-index)
+    # columns for this spreadsheet (1-index) OR you can use letters :A-:Z
     @columns  = {
-      first_name:  4,
-      last_name:   5,
-      birthday:    7,
-      phone:      14,
-      alt_phone:  15,
-      email:       6,
-      start_date: 16,
-      skype:      27,
-      jabber:     28,
-      twitter:    29
+      first_name:  ColumnIndexConvert.convert(:D), #  4,
+      last_name:   ColumnIndexConvert.convert(:E), #  5,
+      birthday:    ColumnIndexConvert.convert(:G), #  7,
+      phone:       ColumnIndexConvert.convert(:N), # 14,
+      alt_phone:   ColumnIndexConvert.convert(:O), # 15,
+      email:       ColumnIndexConvert.convert(:F), #  6,
+      start_date:  ColumnIndexConvert.convert(:P), # 16,
+      resign_date: ColumnIndexConvert.convert(:Q), # 17,
+      skype:       ColumnIndexConvert.convert(:AE), # 27,
+      jabber:      ColumnIndexConvert.convert(:AF), # 28,
+      twitter:     ColumnIndexConvert.convert(:AG), # 29,
     }
-
-    # APP_config contains username/password to Google account
-    conf = YAML.load_file('config.yml')
-    Logger.info "loaded config (#{conf.size} lines)"
-    Logger.debug conf.inspect
-
-    # Logs in.
-    # You can also use OAuth. See document of GoogleSpreadsheet.login_with_oauth for details.
-    Logger.info "logs in for #{conf['account']}"
-    session = GoogleSpreadsheet.login(conf['account'], conf['account_password'])
-
-    Logger.info "retrieve the worksheet"
-    @spreadsheet_key = conf['spreadsheet_key']
-    @worksheet = session.spreadsheet_by_key(@spreadsheet_key).worksheets[0]
-    Logger.info "done"
-
-    Logger.info "Worksheet title: #{@worksheet.title}"
-    Logger.debug "Worksheet contents\n=================="
-    Logger.debug @worksheet.inspect
-
     # first content rows: (index is 1-based)
     @start_row = 3
 
@@ -78,19 +44,40 @@ class Conf
     @resigned_contacts     = %w(thm mbw el pfa)
 
     @zip_file_name = 'nineconsult-vcards'
+    load_config_file
+  end
+
+  def load_config_file
+    # APP_config contains username/password to Google account
+    conf = YAML.load_file('config.yml')
+    Logger.info "loaded config (#{conf.size} lines)"
+    Logger.debug conf.inspect
+
+    # Logs in.
+    Logger.info "logs in for #{conf['account']}"
+    session = GoogleSpreadsheet.login(conf['account'], conf['account_password'])
+
+    Logger.info 'retrieve the worksheet'
+    @spreadsheet_key = conf['spreadsheet_key']
+    @worksheet = session.spreadsheet_by_key(@spreadsheet_key).worksheets[0]
+    Logger.info 'done'
+
+    Logger.info "Worksheet title: #{@worksheet.title}"
+    Logger.debug "Worksheet contents\n=================="
+    Logger.debug @worksheet.inspect
   end
 end
 
 # Generates a Contact class for each employee
 class Contact
-  @@org                   = 'NineConsult A/S'
-  @@email_suffix          = '@nine.dk'
-  @@gravatar_email_suffix = '@nineconsult.dk'
+  ORG                   = 'NineConsult A/S'
+  EMAIL_SUFFIX          = '@nine.dk'
+  GRAVATAR_EMAIL_SUFFIX = '@nineconsult.dk'
 
   attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone,
-                :skype, :jabber, :twitter, :birthday, :org, :resigned
+                :skype, :jabber, :twitter, :birthday, :org, :resigned, :row_num
   # initialize a contact with with values from the worksheet row
-  alias :resigned? :resigned
+  alias_method :resigned?, :resigned
 
   def initialize(config, ws, row)
     idx = config.columns
@@ -108,7 +95,8 @@ class Contact
     @jabber     = ws[row, idx[:jabber]]
     @twitter    = ws[row, idx[:twitter]]
     @birthday   = ws[row, idx[:birthday]]
-    @org        = @@org
+    @org        = ORG
+    @row_num    = row
 
     @resigned = config.resigned_contacts.include? @initials
   end
@@ -120,97 +108,33 @@ class Contact
 
   # returns a gravatar url based on the email address
   def photo_url
-    mail_nine_dk = @email.strip.downcase + @@gravatar_email_suffix
+    mail_nine_dk = @email.strip.downcase + GRAVATAR_EMAIL_SUFFIX
     mail_hash = Digest::MD5.hexdigest(mail_nine_dk)
     "http://www.gravatar.com/avatar/#{mail_hash}?s=150"
   end
 
   # returns full email address
   def email
-    @email + @@email_suffix
+    @email + EMAIL_SUFFIX
   end
 
-  def pretty_print
+  def pretty_print(format = :long)
     out = '#<' << self.class.to_s
-    %i(first_name last_name initials email).each do |prop|
-      out << ' @' << "#{prop.to_s}='#{self.send prop}'"
+    props = case format
+            when :short
+              props = %i(initials name)
+            when :long
+              %i(first_name last_name initials email row_num)
+            else
+              fail RuntimeError "format #{format} not recognized"
+            end
+    props.each do |prop|
+      out << ' @' << "#{prop}='#{send prop}'"
     end
-    out << ">"
+    out << '>'
   end
 end
 
-# VCard class must contain the actual generation of the card.
-# it should read values from a Contact object
-class VCard
-  @@country_code = '+45'
-
-  def initialize(contact)
-    @contact = contact
-  end
-
-  def twitter
-    # remember to remove any @-signs from the twitter name in url
-    twit_url = "http://twitter.com/#!/#{@contact.twitter.gsub(/^\@/, '')}"
-    return '' if @contact.twitter.empty?
-
-    "X-SOCIALPROFILE;type=twitter:#{twit_url}\n"
-  end
-
-  def skype
-    return '' if @contact.skype.empty?
-
-    # "X-SERVICE-SKYPE:Skype:#{@contact.skype}\n"
-    "item1.IMPP;X-SERVICE-TYPE=Skype:skype:#{@contact.skype}\n"
-  end
-
-  def phone
-    return 'TEL;type=CELL;type=VOICE:' if @contact.phone.empty?
-
-    "TEL;type=CELL;type=VOICE;type=pref:#{@@country_code} #{@contact.phone}"
-  end
-
-  def alt_phone
-    return '' if @contact.alt_phone.empty?
-
-    "TEL;type=HOME;type=VOICE:#{@@country_code} #{@contact.alt_phone}\n"
-  end
-
-  def birthday
-    return '' if @contact.birthday.empty?
-
-    "BDAY:#{ Date.parse(@contact.birthday) }"
-  end
-
-  def photo
-    filename = ".photo_cache/#{@contact.initials}.jpg"
-    # puts "#{@contact.initials} exists? #{File.exists?(filename)}"
-    if File.exist?(filename)
-      file_contents = File.read(filename)
-      Base64.strict_encode64(file_contents)
-      # file_contents.split('\n').each{|line| line.prepend(' ')}
-    end
-  end
-
-  def to_vcard
-    # debugger
-    first_part    = <<-ENDVCARD.gsub(/^\s+/, '')
-                    BEGIN:VCARD
-                    VERSION:3.0
-                    N;CHARSET=iso-8859-1:#{@contact.last_name};#{@contact.first_name};;;
-                    FN;CHARSET=iso-8859-1: #{@contact.name}
-                    ORG:#{@contact.org}
-                    #{phone}
-                    EMAIL:#{@contact.email}
-                    #{birthday}
-                    PHOTO;ENCODING=b;TYPE=JPEG:#{photo}
-                    ENDVCARD
-
-    last_part    = <<-ENDVCARD.gsub(/^\s+/, '')
-                    END:VCARD
-                    ENDVCARD
-    first_part + alt_phone + twitter + skype + last_part
-  end
-end
 
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
@@ -237,24 +161,25 @@ class Worksheeter
 
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
-      Logger.info "Skipping invalid contact: #{contact.pretty_print}" unless contact.valid?
-      Logger.info "Skipping resigned contact: #{contact.pretty_print}" if  contact.resigned?
+      Logger.info "Skipping invalid: #{contact.pretty_print}" unless contact.valid?
+      Logger.info "Skipping resigned: #{contact.pretty_print}" if contact.resigned?
 
       next unless contact.valid? && !contact.resigned?
 
       filename = "vcards/#{filename(contact.name)}.vcf"
       File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
         f.write(VCard.new(contact).to_vcard)
+        Logger.info "wrote vcard for #{contact.pretty_print(:short)}"
       end
     end
   end
 
-  # fetching the Gravatar fotos for each email address in <tt>gravatar_email_suffix</tt>
+  # fetching the Gravatar fotos for each mail address in `gravatar_email_suffix`
   def fetch_photos
     employee_rows.each do |row|
       contact = Contact.new(@config, @ws, row)
       if contact.valid?
-        puts "fetching #{contact.initials}: #{contact.photo_url}"
+        Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .photo_cache/#{contact.initials}.jpg `
       end
     end
@@ -283,36 +208,44 @@ end
 
 # slurp command line options and build the vcards
 class VcardBuilder
-  def initialize
-    options = {}
-    optparse = OptionParser.new do|opts|
-      # Set a banner, displayed at the top of the help screen.
-      opts.banner = "Usage: .build.rb [options] "
-      options[:verbose] = false
-      opts.on('-v', '--verbose', 'Output more information') do
-        options[:verbose] = true
+  def parse_options
+    @options ||= begin
+      options = {}
+      optparse = OptionParser.new do|opts|
+        # Set a banner, displayed at the top of the help screen.
+        opts.banner = 'Usage: .build.rb [options] '
+        options[:verbose] = false
+        opts.on('-v', '--verbose', 'Output more information') do
+          options[:verbose] = true
+        end
+        opts.on('--debug', 'Output even more information') do
+          options[:verbose] = true
+          options[:debug] = true
+        end
       end
-      opts.on('--debug', 'Output even more information') do
-        options[:verbose] = true
-        options[:debug] = true
-      end
+      # parse the command line arguments
+      optparse.parse!
+
+      Logger.allow_info = options[:verbose]
+      Logger.allow_debug = options[:debug]
     end
+  end
 
-    # parse the command line arguments
-    optparse.parse!
-
-    Logger.allow_info = options[:verbose]
-    Logger.allow_debug = options[:debug]
-
-    Logger.info "Verbose setting selected. Writing extra info"
-    Logger.debug "Even more verbose setting selected. Writing even more info"
+  def initialize
+    parse_options
+    Logger.info 'Verbose setting selected. Writing extra info'
+    Logger.debug 'Even more verbose setting selected. Writing even more info'
 
     conf = Conf.new
     ws = Worksheeter.new(conf)
+    puts "Fetching photos.."
     ws.fetch_photos
+    puts "Generating vcards.."
     ws.generate_vcards
     ws.build_instructions
+    puts "Writing zip file.."
     ws.zip_folder
+    puts "Done"
   end
 end
 
