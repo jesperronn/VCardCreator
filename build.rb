@@ -12,7 +12,7 @@ require 'optparse'
 
 # load files in ./lib
 Dir[__dir__ + '/lib/*.rb'].each do |f|
-  filename = f.sub(__dir__,'.')
+  filename = f.sub(__dir__, '.')
   require_relative filename
 end
 
@@ -122,7 +122,7 @@ class Contact
     out = '#<' << self.class.to_s
     props = case format
             when :short
-              props = %i(initials name)
+              %i(initials name)
             when :long
               %i(first_name last_name initials email row_num)
             else
@@ -134,7 +134,6 @@ class Contact
     out << '>'
   end
 end
-
 
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
@@ -238,14 +237,14 @@ class VcardBuilder
 
     conf = Conf.new
     ws = Worksheeter.new(conf)
-    puts "Fetching photos.."
+    puts 'Fetching photos..'
     ws.fetch_photos
-    puts "Generating vcards.."
+    puts 'Generating vcards..'
     ws.generate_vcards
     ws.build_instructions
-    puts "Writing zip file.."
+    puts 'Writing zip file..'
     ws.zip_folder
-    puts "Done"
+    puts 'Done'
   end
 end
 
