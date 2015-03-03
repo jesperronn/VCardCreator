@@ -1,16 +1,7 @@
-# inherit_from: .rubocop_todo.yml
+inherit_from: .rubocop_todo.yml
 
 AllCops:
   Exclude:
     - .photo_cache/**/*
     - vcards/**/*
   RunRailsCops: false
-
-Metrics/AbcSize:
-  Max: 27
-
-Metrics/LineLength:
-  Max: 91
-
-Metrics/MethodLength:
-  Max: 18
