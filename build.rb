@@ -41,7 +41,7 @@ class Conf
     @start_row = 3
 
     ## initials of resigned employees -- will be ignored and not generated
-    @resigned_contacts     = %w(thm mbw el pfa)
+    @resigned_contacts     = %w()
 
     @zip_file_name = 'nineconsult-vcards'
     load_config_file
