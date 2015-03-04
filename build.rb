@@ -30,7 +30,7 @@ class Conf
       birthday:    ColumnIndexConvert.convert(:G), #  7,
       phone:       ColumnIndexConvert.convert(:N), # 14,
       alt_phone:   ColumnIndexConvert.convert(:O), # 15,
-      email:       ColumnIndexConvert.convert(:F), #  6,
+      initials:    ColumnIndexConvert.convert(:F), #  6,
       start_date:  ColumnIndexConvert.convert(:P), # 16,
       resign_date: ColumnIndexConvert.convert(:Q), # 17,
       skype:       ColumnIndexConvert.convert(:AE), # 27,
@@ -74,30 +74,45 @@ class Contact
   EMAIL_SUFFIX          = '@nine.dk'
   GRAVATAR_EMAIL_SUFFIX = '@nineconsult.dk'
 
-  attr_accessor :name, :first_name, :last_name, :initials, :phone, :alt_phone,
-                :skype, :jabber, :twitter, :birthday, :org, :resigned, :row_num
   # initialize a contact with with values from the worksheet row
+  INITIAL_PROPS = [
+    :first_name,
+    :last_name,
+    :initials,
+    :phone,
+    :alt_phone,
+    :skype,
+    :jabber,
+    :twitter,
+    :birthday
+  ]
+
+  attr_accessor :name,
+                :first_name,
+                :last_name,
+                :initials,
+                :phone,
+                :alt_phone,
+                :skype,
+                :jabber,
+                :twitter,
+                :birthday,
+                :org,
+                :resigned,
+                :row_num
+
   alias_method :resigned?, :resigned
 
   def initialize(config, ws, row)
-    idx = config.columns
-    #    p ws
-    #    p row
-    #    p idx[:first_name]
-    @first_name = ws[row, idx[:first_name]]
-    @last_name  = ws[row, idx[:last_name]]
-    @name       = "#{@first_name} #{@last_name}"
-    @initials   = ws[row, idx[:email]]
-    @phone      = ws[row, idx[:phone]]
-    @alt_phone  = ws[row, idx[:alt_phone]]
-    @email      = ws[row, idx[:email]]
-    @skype      = ws[row, idx[:skype]]
-    @jabber     = ws[row, idx[:jabber]]
-    @twitter    = ws[row, idx[:twitter]]
-    @birthday   = ws[row, idx[:birthday]]
-    @org        = ORG
-    @row_num    = row
+    INITIAL_PROPS.each do |prop|
+      fail "unknown config property '#{prop}'" unless config.columns[prop]
+      send "#{prop}=", ws[row, config.columns[prop]]
+    end
 
+    @name     = "#{@first_name} #{@last_name}"
+    @email    = initials
+    @org      = ORG
+    @row_num  = row
     @resigned = config.resigned_contacts.include? @initials
   end
 
