@@ -14,6 +14,7 @@ class Contact
     :skype,
     :jabber,
     :twitter,
+    :start_date,
     :birthday
   ]
 
@@ -26,6 +27,7 @@ class Contact
                 :skype,
                 :jabber,
                 :twitter,
+                :start_date,
                 :birthday,
                 :org,
                 :resigned,

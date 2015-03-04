@@ -40,6 +40,12 @@ class VCard
     "BDAY:#{ Date.parse(@contact.birthday) }"
   end
 
+  # put anything in the note that you see fit.
+  # for now, it's the company start date
+  def note
+    "NOTE: Start date - #{@contact.start_date}"
+  end
+
   def photo
     filename = ".photo_cache/#{@contact.initials}.jpg"
     # puts "#{@contact.initials} exists? #{File.exists?(filename)}"
@@ -49,7 +55,6 @@ class VCard
   end
 
   def to_vcard
-    # debugger
     first_part  = <<-ENDVCARD.gsub(/^\s+/, '')
                   BEGIN:VCARD
                   VERSION:3.0
@@ -57,14 +62,18 @@ class VCard
                   FN;CHARSET=iso-8859-1: #{@contact.name}
                   ORG:#{@contact.org}
                   #{phone}
+                  #{alt_phone}
                   EMAIL:#{@contact.email}
                   #{birthday}
+                  #{twitter}
+                  #{skype}
+                  #{note}
                   PHOTO;ENCODING=b;TYPE=JPEG:#{photo}
                   ENDVCARD
 
     last_part = <<-ENDVCARD.gsub(/^\s+/, '')
                 END:VCARD
                 ENDVCARD
-    first_part + alt_phone + twitter + skype + last_part
+    first_part + last_part
   end
 end
