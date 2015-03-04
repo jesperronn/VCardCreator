@@ -7,6 +7,7 @@ require 'digest/md5'
 require 'erb'
 require 'yaml'
 require 'pp'
+require 'pry'
 require 'i18n'
 require 'optparse'
 
