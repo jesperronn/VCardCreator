@@ -2,5 +2,5 @@ vcards
 config.yml
 config.nineconsult.yml
 .DS_Store
-.photo_cache
+.cache
 .idea

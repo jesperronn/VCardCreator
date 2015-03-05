@@ -12,4 +12,4 @@ Metrics/LineLength:
   Max: 91
 
 Metrics/MethodLength:
-  Max: 18
+  Max: 19
