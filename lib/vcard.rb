@@ -47,7 +47,7 @@ class VCard
   end
 
   def photo
-    filename = ".photo_cache/#{@contact.initials}.jpg"
+    filename = ".cache/#{@contact.initials}.jpg"
     # puts "#{@contact.initials} exists? #{File.exists?(filename)}"
     return unless File.exist?(filename)
     file_contents = File.read(filename)
