@@ -19,22 +19,21 @@ end
 
 # Configuration class takes care of all config
 class Conf
-  WS_FILE = '.cache/_worksheet.yml'
   Logger.info 'Loading config from file'
   attr_accessor :columns, :start_row, :worksheet, :resigned_contacts,
-                :spreadsheet_key, :zip_file_name, :conf
+                :zip_file_name, :conf, :local
 
   def initialize
     # columns for this spreadsheet (1-index) OR you can use letters :A-:Z
     @columns  = {
-      first_name:  ColumnIndexConvert.convert(:D), #  4,
-      last_name:   ColumnIndexConvert.convert(:E), #  5,
-      birthday:    ColumnIndexConvert.convert(:G), #  7,
-      phone:       ColumnIndexConvert.convert(:N), # 14,
-      alt_phone:   ColumnIndexConvert.convert(:O), # 15,
-      initials:    ColumnIndexConvert.convert(:F), #  6,
-      start_date:  ColumnIndexConvert.convert(:P), # 16,
-      resign_date: ColumnIndexConvert.convert(:Q), # 17,
+      first_name:  ColumnIndexConvert.convert(:D),  #  4,
+      last_name:   ColumnIndexConvert.convert(:E),  #  5,
+      birthday:    ColumnIndexConvert.convert(:G),  #  7,
+      phone:       ColumnIndexConvert.convert(:N),  # 14,
+      alt_phone:   ColumnIndexConvert.convert(:O),  # 15,
+      initials:    ColumnIndexConvert.convert(:F),  #  6,
+      start_date:  ColumnIndexConvert.convert(:P),  # 16,
+      resign_date: ColumnIndexConvert.convert(:Q),  # 17,
       skype:       ColumnIndexConvert.convert(:AE), # 27,
       jabber:      ColumnIndexConvert.convert(:AF), # 28,
       twitter:     ColumnIndexConvert.convert(:AG), # 29,
@@ -47,7 +46,7 @@ class Conf
 
     @zip_file_name = 'nineconsult-vcards'
     load_config_file
-    load_worksheet
+#    load_worksheet
   end
 
   def load_config_file
@@ -55,17 +54,40 @@ class Conf
     @conf = YAML.load_file('config.yml')
     Logger.info "loaded config (#{conf.size} lines)"
     Logger.debug conf.inspect
-    @spreadsheet_key = conf['spreadsheet_key']
+  end
+
+end
+
+# Worksheeter class reads configuration, and employees.
+# Then it generates a vcard for each employee
+class Worksheeter
+  WS_FILE = '.cache/_worksheet.yml'
+
+  def initialize(config)
+    @config = config
+    FileUtils.mkdir_p 'vcards'
+    FileUtils.mkdir_p '.cache'
+  end
+
+  def load_worksheet_from_cache
+    Logger.info 'Load the worksheet from disk'
+    @worksheet = YAML.load_file(WS_FILE)
+    rows = @worksheet.rows
+    Logger.info "Worksheet title: #{@worksheet.title}"
+    Logger.debug "Worksheet contents (#{rows.size} rows)\n=================="
   end
 
   def load_worksheet
+    return load_worksheet_from_cache if @config.local
+
+    conf = @config.conf
     # TODO: return worksheet_from_cache(filename) if false
     # Logs in.
     Logger.info "logs in for #{conf['account']}"
-    session = GoogleSpreadsheet.login(@conf['account'], @conf['account_password'])
+    session = GoogleSpreadsheet.login(conf['account'], conf['account_password'])
 
     Logger.info 'retrieve the worksheet'
-    @worksheet = session.spreadsheet_by_key(@spreadsheet_key).worksheets[0]
+    @worksheet = session.spreadsheet_by_key(conf['spreadsheet_key']).worksheets[0]
     # trigger fetch of data or it will not be written
     rows = @worksheet.rows
     Logger.info 'done'
@@ -75,18 +97,6 @@ class Conf
     Logger.debug @worksheet.inspect
     File.open(WS_FILE, 'w') { |f| f.write @worksheet.to_yaml }
     Logger.info "Worksheet written to file: #{WS_FILE}"
-  end
-end
-
-# Worksheeter class reads configuration, and employees.
-# Then it generates a vcard for each employee
-class Worksheeter
-  def initialize(config)
-    @ws = config.worksheet
-    @config = config
-
-    FileUtils.mkdir_p 'vcards'
-    FileUtils.mkdir_p '.cache'
   end
 
   def filename(contact_name)
@@ -98,7 +108,7 @@ class Worksheeter
   def generate_vcards
     # debugstuff()
     employee_rows.each do |row|
-      contact = Contact.new(@config, @ws, row)
+      contact = Contact.new(@config, @worksheet, row)
       # p contact.name
 
       # only create vcards for the "valid" rows in spreadsheet:
@@ -119,7 +129,7 @@ class Worksheeter
   # fetching the Gravatar fotos for each mail address in `gravatar_email_suffix`
   def fetch_photos
     employee_rows.each do |row|
-      contact = Contact.new(@config, @ws, row)
+      contact = Contact.new(@config, @worksheet, row)
       if contact.valid?
         Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .cache/#{contact.initials}.jpg `
@@ -130,7 +140,7 @@ class Worksheeter
   def build_instructions
     filename    = 'INSTRUCTIONS.erb.md'
     erb_binding = binding
-    @spreadsheet_key = @config.spreadsheet_key
+    @spreadsheet_key = @config.conf['spreadsheet_key']
     template = ERB.new(File.read(filename), nil, '<>')
     contents = template.result(erb_binding)
 
@@ -144,46 +154,50 @@ class Worksheeter
   end
 
   def employee_rows
-    @config.start_row..@ws.num_rows
+    @config.start_row..@worksheet.num_rows
   end
 end
 
 # slurp command line options and build the vcards
 class VcardBuilder
   def parse_options
-    @options ||= begin
-      options = {}
-      optparse = OptionParser.new do|opts|
-        # Set a banner, displayed at the top of the help screen.
-        opts.banner = 'Usage: .build.rb [options] '
-        options[:verbose] = false
-        opts.on('-v', '--verbose', 'Output more information') do
-          options[:verbose] = true
-        end
-        opts.on('--debug', 'Output even more information') do
-          options[:verbose] = true
-          options[:debug] = true
-        end
-        opts.on('--local', 'Use local cached photos and worksheet') do
-        end
+    optparse = OptionParser.new do|opts|
+      # Set a banner, displayed at the top of the help screen.
+      opts.banner = 'Usage: .build.rb [options] '
+      opts.on('-v', '--verbose', 'Output more information') do
+        Logger.allow_info = true
       end
-      # parse the command line arguments
-      optparse.parse!
+      opts.on('--debug', 'Output even more information') do
+        Logger.allow_info = true
+        Logger.allow_debug = true
+      end
+      opts.on('--local', 'Use local cached photos and worksheet') do
+        @conf.local = true
+      end
 
-      Logger.allow_info = options[:verbose]
-      Logger.allow_debug = options[:debug]
+      opts.on('-h', '--help', 'Prints this help') do
+        puts opts
+        exit
+      end
     end
+    # parse the command line arguments
+    optparse.parse!
   end
 
   def initialize
+    @conf = Conf.new
+    # options will be added to @conf
     parse_options
+
     Logger.info 'Verbose setting selected. Writing extra info'
     Logger.debug 'Even more verbose setting selected. Writing even more info'
+    Logger.info '--local set. Using cache instead of making new requests' if @conf.local
 
-    conf = Conf.new
-    ws = Worksheeter.new(conf)
+    ws = Worksheeter.new(@conf)
+    puts 'Loading worksheet...'
+    ws.load_worksheet
     puts 'Fetching photos..'
-    ws.fetch_photos
+    ws.fetch_photos unless @conf.local
     puts 'Generating vcards..'
     ws.generate_vcards
     ws.build_instructions
