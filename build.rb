@@ -77,7 +77,7 @@ class Worksheeter
     @config = config
 
     FileUtils.mkdir_p 'vcards'
-    FileUtils.mkdir_p '.photo_cache'
+    FileUtils.mkdir_p '.cache'
   end
 
   def filename(contact_name)
@@ -113,7 +113,7 @@ class Worksheeter
       contact = Contact.new(@config, @ws, row)
       if contact.valid?
         Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
-        `curl -s #{contact.photo_url} > .photo_cache/#{contact.initials}.jpg `
+        `curl -s #{contact.photo_url} > .cache/#{contact.initials}.jpg `
       end
     end
   end
