@@ -11,32 +11,26 @@ class VCard
     # remember to remove any @-signs from the twitter name in url
     twit_url = "http://twitter.com/#!/#{@contact.twitter.gsub(/^\@/, '')}"
     return '' if @contact.twitter.empty?
-
     "X-SOCIALPROFILE;type=twitter:#{twit_url}\n"
   end
 
   def skype
     return '' if @contact.skype.empty?
-
-    # "X-SERVICE-SKYPE:Skype:#{@contact.skype}\n"
     "item1.IMPP;X-SERVICE-TYPE=Skype:skype:#{@contact.skype}\n"
   end
 
   def phone
     return 'TEL;type=CELL;type=VOICE:' if @contact.phone.empty?
-
     "TEL;type=CELL;type=VOICE;type=pref:#{@country_code} #{@contact.phone}"
   end
 
   def alt_phone
     return '' if @contact.alt_phone.empty?
-
     "TEL;type=HOME;type=VOICE:#{@country_code} #{@contact.alt_phone}\n"
   end
 
   def birthday
     return '' if @contact.birthday.empty?
-
     "BDAY:#{ Date.parse(@contact.birthday) }"
   end
 

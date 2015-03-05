@@ -46,7 +46,6 @@ class Conf
 
     @zip_file_name = 'nineconsult-vcards'
     load_config_file
-#    load_worksheet
   end
 
   def load_config_file
@@ -55,7 +54,6 @@ class Conf
     Logger.info "loaded config (#{conf.size} lines)"
     Logger.debug conf.inspect
   end
-
 end
 
 # Worksheeter class reads configuration, and employees.
