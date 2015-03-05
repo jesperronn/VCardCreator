@@ -19,9 +19,10 @@ end
 
 # Configuration class takes care of all config
 class Conf
+  WS_FILE = '.cache/_worksheet.yml'
   Logger.info 'Loading config from file'
   attr_accessor :columns, :start_row, :worksheet, :resigned_contacts,
-                :spreadsheet_key, :zip_file_name
+                :spreadsheet_key, :zip_file_name, :conf
 
   def initialize
     # columns for this spreadsheet (1-index) OR you can use letters :A-:Z
@@ -46,26 +47,34 @@ class Conf
 
     @zip_file_name = 'nineconsult-vcards'
     load_config_file
+    load_worksheet
   end
 
   def load_config_file
     # APP_config contains username/password to Google account
-    conf = YAML.load_file('config.yml')
+    @conf = YAML.load_file('config.yml')
     Logger.info "loaded config (#{conf.size} lines)"
     Logger.debug conf.inspect
+    @spreadsheet_key = conf['spreadsheet_key']
+  end
 
+  def load_worksheet
+    # TODO: return worksheet_from_cache(filename) if false
     # Logs in.
     Logger.info "logs in for #{conf['account']}"
-    session = GoogleSpreadsheet.login(conf['account'], conf['account_password'])
+    session = GoogleSpreadsheet.login(@conf['account'], @conf['account_password'])
 
     Logger.info 'retrieve the worksheet'
-    @spreadsheet_key = conf['spreadsheet_key']
     @worksheet = session.spreadsheet_by_key(@spreadsheet_key).worksheets[0]
+    # trigger fetch of data or it will not be written
+    rows = @worksheet.rows
     Logger.info 'done'
 
     Logger.info "Worksheet title: #{@worksheet.title}"
-    Logger.debug "Worksheet contents\n=================="
+    Logger.debug "Worksheet contents (#{rows.size} rows)\n=================="
     Logger.debug @worksheet.inspect
+    File.open(WS_FILE, 'w') { |f| f.write @worksheet.to_yaml }
+    Logger.info "Worksheet written to file: #{WS_FILE}"
   end
 end
 
@@ -154,6 +163,8 @@ class VcardBuilder
         opts.on('--debug', 'Output even more information') do
           options[:verbose] = true
           options[:debug] = true
+        end
+        opts.on('--local', 'Use local cached photos and worksheet') do
         end
       end
       # parse the command line arguments
