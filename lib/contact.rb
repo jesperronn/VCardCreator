@@ -80,4 +80,8 @@ class Contact
     end
     out << '>'
   end
+
+  def to_vcard
+    VCard.new(self).to_vcard
+  end
 end

@@ -52,7 +52,6 @@ class Conf
     # APP_config contains username/password to Google account
     @conf = YAML.load_file('config.yml')
     Logger.info "loaded config (#{conf.size} lines)"
-    Logger.debug conf.inspect
   end
 end
 
@@ -70,22 +69,24 @@ class Worksheeter
   def load_worksheet_from_cache
     Logger.info 'Load the worksheet from disk'
     @worksheet = YAML.load_file(WS_FILE)
-    rows = @worksheet.rows
-    Logger.info "Worksheet title: #{@worksheet.title}"
-    Logger.debug "Worksheet contents (#{rows.size} rows)\n=================="
+  end
+
+  def load_worksheet_from_net
+    Logger.info "logs in for #{@config.conf['account']}"
+    session = GoogleSpreadsheet.login(@config.conf['account'],
+                                      @config.conf['account_password'])
+
+    key = @config.conf['spreadsheet_key']
+    Logger.info "retrieve the worksheet key #{key}"
+    @worksheet = session.spreadsheet_by_key(key).worksheets[0]
+
+    File.open(WS_FILE, 'w') { |f| f.write @worksheet.to_yaml }
+    Logger.info "Worksheet written to file: #{WS_FILE}"
   end
 
   def load_worksheet
-    return load_worksheet_from_cache if @config.local
+    @config.local ? load_worksheet_from_cache : load_worksheet_from_net
 
-    conf = @config.conf
-    # TODO: return worksheet_from_cache(filename) if false
-    # Logs in.
-    Logger.info "logs in for #{conf['account']}"
-    session = GoogleSpreadsheet.login(conf['account'], conf['account_password'])
-
-    Logger.info 'retrieve the worksheet'
-    @worksheet = session.spreadsheet_by_key(conf['spreadsheet_key']).worksheets[0]
     # trigger fetch of data or it will not be written
     rows = @worksheet.rows
     Logger.info 'done'
@@ -93,8 +94,6 @@ class Worksheeter
     Logger.info "Worksheet title: #{@worksheet.title}"
     Logger.debug "Worksheet contents (#{rows.size} rows)\n=================="
     Logger.debug @worksheet.inspect
-    File.open(WS_FILE, 'w') { |f| f.write @worksheet.to_yaml }
-    Logger.info "Worksheet written to file: #{WS_FILE}"
   end
 
   def filename(contact_name)
@@ -104,11 +103,8 @@ class Worksheeter
   end
 
   def generate_vcards
-    # debugstuff()
     employee_rows.each do |row|
       contact = Contact.new(@config, @worksheet, row)
-      # p contact.name
-
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
       Logger.info "Skipping invalid: #{contact.pretty_print}" unless contact.valid?
@@ -118,8 +114,8 @@ class Worksheeter
 
       filename = "vcards/#{filename(contact.name)}.vcf"
       File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
-        f.write(VCard.new(contact).to_vcard)
-        Logger.info "wrote vcard for #{contact.pretty_print(:short)}"
+        f.write(contact.to_vcard)
+        Logger.debug "wrote vcard for #{contact.pretty_print(:short)}"
       end
     end
   end

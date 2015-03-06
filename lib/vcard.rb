@@ -37,7 +37,9 @@ class VCard
   # put anything in the note that you see fit.
   # for now, it's the company start date
   def note
-    "NOTE: Start date - #{@contact.start_date}"
+    <<-ENDNOTE
+    NOTE: Start date - #{@contact.start_date}
+    ENDNOTE
   end
 
   def photo
@@ -49,7 +51,7 @@ class VCard
   end
 
   def to_vcard
-    first_part  = <<-ENDVCARD.gsub(/^\s+/, '')
+    <<-ENDVCARD.gsub(/^\s+/, '')
                   BEGIN:VCARD
                   VERSION:3.0
                   N;CHARSET=iso-8859-1:#{@contact.last_name};#{@contact.first_name};;;
@@ -63,11 +65,7 @@ class VCard
                   #{skype}
                   #{note}
                   PHOTO;ENCODING=b;TYPE=JPEG:#{photo}
+                  END:VCARD
                   ENDVCARD
-
-    last_part = <<-ENDVCARD.gsub(/^\s+/, '')
-                END:VCARD
-                ENDVCARD
-    first_part + last_part
   end
 end
