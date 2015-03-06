@@ -8,12 +8,13 @@ class ColumnIndexConvert
   COLS = ('A'..'BB').to_a
 
   class << self
+    # 0-based indexes. Add +1 if you need 1-based indexes
     def convert(item)
-      COLS.index(item.to_s) + 1
+      COLS.index(item.to_s)
     end
   end
 end
 # Expected outputs:
-# ColumnIndexConvert.convert(:A) # => 1
-# ColumnIndexConvert.convert(:C) # => 3
-# ColumnIndexConvert.convert(:AA)# => 27
+# ColumnIndexConvert.convert(:A)   # => 0
+# ColumnIndexConvert.convert(:C)   # => 2
+# ColumnIndexConvert.convert(:AA)  # => 26
