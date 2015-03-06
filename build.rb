@@ -24,7 +24,7 @@ class Conf
                 :zip_file_name, :conf, :local
 
   def initialize
-    # columns for this spreadsheet (1-index) OR you can use letters :A-:Z
+    # columns for this spreadsheet (0-index) OR you can use letters :A-:Z
     @columns  = {
       first_name:  ColumnIndexConvert.convert(:D),  #  4,
       last_name:   ColumnIndexConvert.convert(:E),  #  5,
@@ -38,8 +38,8 @@ class Conf
       jabber:      ColumnIndexConvert.convert(:AF), # 28,
       twitter:     ColumnIndexConvert.convert(:AG), # 29,
     }
-    # first content rows: (index is 1-based)
-    @start_row = 3
+    # first content rows: (index is 0-based)
+    @start_row = 2
 
     ## initials of resigned employees -- will be ignored and not generated
     @resigned_contacts     = %w()
@@ -68,32 +68,31 @@ class Worksheeter
 
   def load_worksheet_from_cache
     Logger.info 'Load the worksheet from disk'
-    @worksheet = YAML.load_file(WS_FILE)
+    @rows = YAML.load_file(WS_FILE)
   end
 
   def load_worksheet_from_net
-    Logger.info "logs in for #{@config.conf['account']}"
-    session = GoogleSpreadsheet.login(@config.conf['account'],
-                                      @config.conf['account_password'])
+    c = @config.conf
+    Logger.info "logs in for #{c['account']}"
+    session = GoogleSpreadsheet.login(c['account'],
+                                      c['account_password'])
 
-    key = @config.conf['spreadsheet_key']
+    key = c['spreadsheet_key']
     Logger.info "retrieve the worksheet key #{key}"
-    @worksheet = session.spreadsheet_by_key(key).worksheets[0]
+    worksheet = session.spreadsheet_by_key(key).worksheets[0]
 
-    File.open(WS_FILE, 'w') { |f| f.write @worksheet.to_yaml }
-    Logger.info "Worksheet written to file: #{WS_FILE}"
+    Logger.info "Worksheet title: #{worksheet.title}"
+    puts 'Fetching rows..'
+    @rows = worksheet.rows
+
+    File.open(WS_FILE, 'w') { |f| f.write @rows.to_yaml }
+    Logger.info "#{@rows.size} Worksheet rows written to file: #{WS_FILE}"
   end
 
   def load_worksheet
     @config.local ? load_worksheet_from_cache : load_worksheet_from_net
-
-    # trigger fetch of data or it will not be written
-    rows = @worksheet.rows
     Logger.info 'done'
-
-    Logger.info "Worksheet title: #{@worksheet.title}"
-    Logger.debug "Worksheet contents (#{rows.size} rows)\n=================="
-    Logger.debug @worksheet.inspect
+    Logger.debug "Worksheet contents (#{@rows.size} rows)\n=================="
   end
 
   def filename(contact_name)
@@ -103,8 +102,8 @@ class Worksheeter
   end
 
   def generate_vcards
-    employee_rows.each do |row|
-      contact = Contact.new(@config, @worksheet, row)
+    employee_rows.each do |num|
+      contact = Contact.new(@config, @rows[num], num)
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
       Logger.info "Skipping invalid: #{contact.pretty_print}" unless contact.valid?
@@ -122,8 +121,8 @@ class Worksheeter
 
   # fetching the Gravatar fotos for each mail address in `gravatar_email_suffix`
   def fetch_photos
-    employee_rows.each do |row|
-      contact = Contact.new(@config, @worksheet, row)
+    employee_rows.each do |num|
+      contact = Contact.new(@config, @rows[num], num)
       if contact.valid?
         Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .cache/#{contact.initials}.jpg `
@@ -148,7 +147,7 @@ class Worksheeter
   end
 
   def employee_rows
-    @config.start_row..@worksheet.num_rows
+    @config.start_row..@rows.size
   end
 end
 

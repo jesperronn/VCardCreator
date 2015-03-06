@@ -35,22 +35,24 @@ class Contact
 
   alias_method :resigned?, :resigned
 
-  def initialize(config, ws, row)
-    INITIAL_PROPS.each do |prop|
-      fail "unknown config property '#{prop}'" unless config.columns[prop]
-      send "#{prop}=", ws[row, config.columns[prop]]
+  def initialize(config, row, num)
+    unless row.nil?
+      INITIAL_PROPS.each do |prop|
+        fail "unknown config property '#{prop}'" unless config.columns[prop]
+        send "#{prop}=", row[config.columns[prop]]
+      end
     end
 
     @name     = "#{@first_name} #{@last_name}"
     @email    = initials
     @org      = ORG
-    @row_num  = row
+    @row_num  = num
     @resigned = config.resigned_contacts.include? @initials
   end
 
   # valid contacts must have name and email present
   def valid?
-    !(@initials.empty? || @first_name.empty? || @last_name.empty?)
+    !invalid?
   end
 
   # returns a gravatar url based on the email address
@@ -62,7 +64,7 @@ class Contact
 
   # returns full email address
   def email
-    @email + EMAIL_SUFFIX
+    "#{@email}#{EMAIL_SUFFIX}"
   end
 
   def pretty_print(format = :long)
@@ -83,5 +85,11 @@ class Contact
 
   def to_vcard
     VCard.new(self).to_vcard
+  end
+
+  private
+
+  def invalid?
+    [@initials, @first_name, @last_name].any? { |v| v.nil? || v.empty? }
   end
 end
