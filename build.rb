@@ -96,14 +96,8 @@ class Worksheeter
     Logger.debug "Worksheet contents (#{@rows.size} rows)\n=================="
   end
 
-  def filename(contact_name)
-    I18n.enforce_available_locales = false
-    I18n.locale = :da
-    I18n.transliterate contact_name
-  end
-
-  def generate_vcards
-    employee_rows.each do |num|
+  def generate_contacts
+    contacts = employee_rows.map do |num|
       contact = Contact.new(@config, @rows[num], num)
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
@@ -111,19 +105,19 @@ class Worksheeter
       Logger.info "Skipping resigned: #{contact.pretty_print}" if contact.resigned?
 
       next unless contact.valid? && !contact.resigned?
+      contact
+    end.compact
+    contacts
+  end
 
-      filename = "vcards/#{filename(contact.name)}.vcf"
-      File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
-        f.write(contact.to_vcard)
-        Logger.debug "wrote vcard for #{contact.pretty_print(:short)}"
-      end
-    end
+  def generate_vcards(contacts)
+    contacts.each(&:write_to_file)
   end
 
   # fetching the Gravatar fotos for each mail address in `gravatar_email_suffix`
-  def fetch_photos
-    employee_rows.each do |num|
-      contact = Contact.new(@config, @rows[num], num)
+  def fetch_photos(contacts)
+    return if @config.local
+    contacts.each do |contact|
       if contact.valid?
         Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .cache/#{contact.initials}.jpg `
@@ -190,10 +184,12 @@ class VcardBuilder
     ws = Worksheeter.new(@conf)
     puts 'Loading worksheet...'
     ws.load_worksheet
+    puts 'Generate contacts..'
+    contacts = ws.generate_contacts
     puts 'Fetching photos..'
-    ws.fetch_photos unless @conf.local
+    ws.fetch_photos(contacts)
     puts 'Generating vcards..'
-    ws.generate_vcards
+    ws.generate_vcards(contacts)
     ws.build_instructions
     puts 'Writing zip file..'
     ws.zip_folder

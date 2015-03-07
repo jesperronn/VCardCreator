@@ -89,9 +89,22 @@ class Contact
     VCard.new(self).to_vcard
   end
 
+  def write_to_file
+    File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
+      f.write(to_vcard)
+      Logger.debug "wrote vcard for #{pretty_print(:short)}"
+    end
+  end
+
   private
 
   def invalid?
     [@initials, @first_name, @last_name].any? { |v| v.nil? || v.empty? }
+  end
+
+  def filename
+    I18n.enforce_available_locales = false
+    I18n.locale = :da
+    I18n.transliterate "vcards/#{name}.vcf"
   end
 end
