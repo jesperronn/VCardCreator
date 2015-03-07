@@ -1,5 +1,6 @@
 machine:
-  ruby: 2.2.1
+  ruby:
+    version: 2.2.1
 
 test:
   pre:
