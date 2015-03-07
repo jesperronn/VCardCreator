@@ -14,7 +14,7 @@ Metrics/AbcSize:
 Metrics/LineLength:
   Max: 88
 
-# Offense count: 7
+# Offense count: 8
 # Configuration parameters: CountComments.
 Metrics/MethodLength:
   Max: 18
