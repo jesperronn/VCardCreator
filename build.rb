@@ -69,29 +69,37 @@ class Worksheeter
 
   def load_worksheet_from_cache
     Logger.info 'Load the worksheet from disk'
-    @rows = YAML.load_file(WS_FILE)
+    YAML.load_file(WS_FILE)
   end
 
-  def load_worksheet_from_net
-    c = @config.conf
-    Logger.info "logs in for #{c['account']}"
-    session = GoogleSpreadsheet.login(c['account'],
-                                      c['account_password'])
+  def load_worksheet_from_net(account, pw, key)
+    Logger.info "logs in for #{account}"
+    session = GoogleSpreadsheet.login(account, pw)
 
-    key = c['spreadsheet_key']
     Logger.info "retrieve the worksheet key #{key}"
     worksheet = session.spreadsheet_by_key(key).worksheets[0]
 
     Logger.info "Worksheet title: #{worksheet.title}"
     puts 'Fetching rows..'
-    @rows = worksheet.rows
+    worksheet.rows
+  end
 
-    File.open(WS_FILE, 'w') { |f| f.write @rows.to_yaml }
-    Logger.info "#{@rows.size} Worksheet rows written to file: #{WS_FILE}"
+  def write_worksheet_rows_to_file(rows)
+    File.open(WS_FILE, 'w') { |f| f.write rows.to_yaml }
+    Logger.info "#{rows.size} Worksheet rows written to file: #{WS_FILE}"
   end
 
   def load_worksheet
-    @config.local ? load_worksheet_from_cache : load_worksheet_from_net
+    if @config.local
+      @rows = load_worksheet_from_cache
+    else
+      @rows = load_worksheet_from_net(
+        @config.conf['account'],
+        @config.conf['account_password'],
+        @config.conf['spreadsheet_key'])
+      write_worksheet_rows_to_file(@rows)
+    end
+
     Logger.info 'done'
     Logger.debug "Worksheet contents (#{@rows.size} rows)\n=================="
   end
@@ -101,8 +109,8 @@ class Worksheeter
       contact = Contact.new(@config, @rows[num], num)
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
-      Logger.info "Skipping invalid: #{contact.pretty_print}" unless contact.valid?
-      Logger.info "Skipping resigned: #{contact.pretty_print}" if contact.resigned?
+      Logger.info "Skipping invalid: #{contact.pretty}" unless contact.valid?
+      Logger.info "Skipping resigned: #{contact.pretty}" if contact.resigned?
 
       next unless contact.valid? && !contact.resigned?
       contact
@@ -179,7 +187,7 @@ class VcardBuilder
 
     Logger.info 'Verbose setting selected. Writing extra info'
     Logger.debug 'Even more verbose setting selected. Writing even more info'
-    Logger.info '--local set. Using cache instead of making new requests' if @conf.local
+    Logger.info '--local set. Using cache instead of http requests' if @conf.local
 
     ws = Worksheeter.new(@conf)
     puts 'Loading worksheet...'

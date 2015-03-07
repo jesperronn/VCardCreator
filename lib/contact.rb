@@ -69,7 +69,7 @@ class Contact
     "#{@email}#{EMAIL_SUFFIX}"
   end
 
-  def pretty_print(format = :long)
+  def pretty(format = :long)
     out = '#<' << self.class.to_s
     props = case format
             when :short
@@ -92,7 +92,7 @@ class Contact
   def write_to_file
     File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
       f.write(to_vcard)
-      Logger.debug "wrote vcard for #{pretty_print(:short)}"
+      Logger.debug "wrote vcard for #{pretty(:short)}"
     end
   end
 
