@@ -14,6 +14,12 @@ class VCard
     "X-SOCIALPROFILE;type=twitter:#{twit_url}\n"
   end
 
+  def linkedin
+    # remember to remove any @-signs from the linkedin name in url
+    return '' if @contact.linkedin.empty?
+    "X-SOCIALPROFILE;type=linkedin:#{@contact.linkedin}\n"
+  end
+
   def skype
     return '' if @contact.skype.empty?
     "item1.IMPP;X-SERVICE-TYPE=Skype:skype:#{@contact.skype}\n"
@@ -54,13 +60,15 @@ class VCard
     <<-ENDVCARD.gsub(/^\s+/, '')
                   BEGIN:VCARD
                   VERSION:3.0
-                  N;CHARSET=iso-8859-1:#{@contact.last_name};#{@contact.first_name};;;
+                  PROFILE:VCARD
+                  N;CHARSET=iso-8859-1:#{@contact.last_name};#{@contact.first_name}
                   FN;CHARSET=iso-8859-1: #{@contact.name}
                   ORG:#{@contact.org}
                   #{phone}
                   #{alt_phone}
                   EMAIL:#{@contact.email}
                   #{birthday}
+                  #{linkedin}
                   #{twitter}
                   #{skype}
                   #{note}
