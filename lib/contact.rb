@@ -1,6 +1,6 @@
 # Generates a Contact class for each employee
 class Contact
-  ORG                   = 'NineConsult A/S'
+  ORG                   = 'Nine A/S'
   EMAIL_SUFFIX          = '@nine.dk'
   GRAVATAR_EMAIL_SUFFIX = '@nineconsult.dk'
 
@@ -14,6 +14,7 @@ class Contact
     :skype,
     :jabber,
     :twitter,
+    :linkedin,
     :start_date,
     :birthday
   ]
@@ -27,6 +28,7 @@ class Contact
                 :skype,
                 :jabber,
                 :twitter,
+                :linkedin,
                 :start_date,
                 :birthday,
                 :org,

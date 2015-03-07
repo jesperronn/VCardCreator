@@ -26,17 +26,18 @@ class Conf
   def initialize
     # columns for this spreadsheet (0-index) OR you can use letters :A-:Z
     @columns  = {
-      first_name:  ColumnIndexConvert.convert(:D),  #  4,
-      last_name:   ColumnIndexConvert.convert(:E),  #  5,
-      birthday:    ColumnIndexConvert.convert(:G),  #  7,
-      phone:       ColumnIndexConvert.convert(:N),  # 14,
-      alt_phone:   ColumnIndexConvert.convert(:O),  # 15,
-      initials:    ColumnIndexConvert.convert(:F),  #  6,
-      start_date:  ColumnIndexConvert.convert(:P),  # 16,
-      resign_date: ColumnIndexConvert.convert(:Q),  # 17,
-      skype:       ColumnIndexConvert.convert(:AE), # 27,
-      jabber:      ColumnIndexConvert.convert(:AF), # 28,
-      twitter:     ColumnIndexConvert.convert(:AG), # 29,
+      first_name:  ColumnIndexConvert.convert(:D),
+      last_name:   ColumnIndexConvert.convert(:E),
+      birthday:    ColumnIndexConvert.convert(:G),
+      phone:       ColumnIndexConvert.convert(:N),
+      alt_phone:   ColumnIndexConvert.convert(:O),
+      initials:    ColumnIndexConvert.convert(:F),
+      start_date:  ColumnIndexConvert.convert(:P),
+      resign_date: ColumnIndexConvert.convert(:Q),
+      linkedin:    ColumnIndexConvert.convert(:AD),
+      skype:       ColumnIndexConvert.convert(:AE),
+      jabber:      ColumnIndexConvert.convert(:AF),
+      twitter:     ColumnIndexConvert.convert(:AG)
     }
     # first content rows: (index is 0-based)
     @start_row = 2
