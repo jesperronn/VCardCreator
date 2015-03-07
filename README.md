@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jesperronn/VCardCreator.svg?branch=master)](https://travis-ci.org/jesperronn/VCardCreator)
+
 # Create Vcards from  Google Spreadsheet data #
 
 Script to create VCards from a google spreadsheet, for easy import into
