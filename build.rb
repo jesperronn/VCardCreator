@@ -188,7 +188,9 @@ class VcardBuilder
     Logger.info 'Verbose setting selected. Writing extra info'
     Logger.debug 'Even more verbose setting selected. Writing even more info'
     Logger.info '--local set. Using cache instead of http requests' if @conf.local
+  end
 
+  def build
     ws = Worksheeter.new(@conf)
     puts 'Loading worksheet...'
     ws.load_worksheet
@@ -205,4 +207,4 @@ class VcardBuilder
   end
 end
 
-VcardBuilder.new
+VcardBuilder.new.build
