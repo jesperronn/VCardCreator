@@ -1,4 +1,4 @@
-# ColumnIndexConverter so that we can use spreadsheet column definitions A.B.C..etc
+# ColumnIndexConverter can translate spreadsheet column definitions A.B.C..etc
 #
 # Usage: see bottom
 #

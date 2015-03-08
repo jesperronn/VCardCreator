@@ -38,10 +38,13 @@ class Contact
   alias_method :resigned?, :resigned
 
   def initialize(config, row, num)
+    # convert the columns array of hashes to one hash for easy lookup
+    cols = config.columns.inject(:merge)
     unless row.nil?
       INITIAL_PROPS.each do |prop|
-        fail "unknown config property '#{prop}'" unless config.columns[prop]
-        send "#{prop}=", row[config.columns[prop]]
+        fail "unknown config property '#{prop}'" unless cols[prop]
+
+        send "#{prop}=", row[cols[prop].to_i]
       end
     end
 
@@ -69,7 +72,7 @@ class Contact
     "#{@email}#{EMAIL_SUFFIX}"
   end
 
-  def pretty_print(format = :long)
+  def pretty(format = :long)
     out = '#<' << self.class.to_s
     props = case format
             when :short
@@ -89,9 +92,22 @@ class Contact
     VCard.new(self).to_vcard
   end
 
+  def write_to_file
+    File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
+      f.write(to_vcard)
+      Logger.debug "wrote vcard for #{pretty(:short)}"
+    end
+  end
+
   private
 
   def invalid?
     [@initials, @first_name, @last_name].any? { |v| v.nil? || v.empty? }
+  end
+
+  def filename
+    I18n.enforce_available_locales = false
+    I18n.locale = :da
+    I18n.transliterate "vcards/#{name}.vcf"
   end
 end

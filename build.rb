@@ -17,45 +17,6 @@ Dir[__dir__ + '/lib/*.rb'].each do |f|
   require_relative filename
 end
 
-# Configuration class takes care of all config
-class Conf
-  Logger.info 'Loading config from file'
-  attr_accessor :columns, :start_row, :worksheet, :resigned_contacts,
-                :zip_file_name, :conf, :local
-
-  def initialize
-    # columns for this spreadsheet (0-index) OR you can use letters :A-:Z
-    @columns  = {
-      first_name:  ColumnIndexConvert.convert(:D),
-      last_name:   ColumnIndexConvert.convert(:E),
-      birthday:    ColumnIndexConvert.convert(:G),
-      phone:       ColumnIndexConvert.convert(:N),
-      alt_phone:   ColumnIndexConvert.convert(:O),
-      initials:    ColumnIndexConvert.convert(:F),
-      start_date:  ColumnIndexConvert.convert(:P),
-      resign_date: ColumnIndexConvert.convert(:Q),
-      linkedin:    ColumnIndexConvert.convert(:AD),
-      skype:       ColumnIndexConvert.convert(:AE),
-      jabber:      ColumnIndexConvert.convert(:AF),
-      twitter:     ColumnIndexConvert.convert(:AG)
-    }
-    # first content rows: (index is 0-based)
-    @start_row = 2
-
-    ## initials of resigned employees -- will be ignored and not generated
-    @resigned_contacts     = %w()
-
-    @zip_file_name = 'nineconsult-vcards'
-    load_config_file
-  end
-
-  def load_config_file
-    # APP_config contains username/password to Google account
-    @conf = YAML.load_file('config.yml')
-    Logger.info "loaded config (#{conf.size} lines)"
-  end
-end
-
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
 class Worksheeter
@@ -69,61 +30,63 @@ class Worksheeter
 
   def load_worksheet_from_cache
     Logger.info 'Load the worksheet from disk'
-    @rows = YAML.load_file(WS_FILE)
+    YAML.load_file(WS_FILE)
   end
 
-  def load_worksheet_from_net
-    c = @config.conf
-    Logger.info "logs in for #{c['account']}"
-    session = GoogleSpreadsheet.login(c['account'],
-                                      c['account_password'])
+  def load_worksheet_from_net(account, pw, key)
+    Logger.info "logs in for #{account}"
+    session = GoogleSpreadsheet.login(account, pw)
 
-    key = c['spreadsheet_key']
     Logger.info "retrieve the worksheet key #{key}"
     worksheet = session.spreadsheet_by_key(key).worksheets[0]
 
     Logger.info "Worksheet title: #{worksheet.title}"
     puts 'Fetching rows..'
-    @rows = worksheet.rows
+    worksheet.rows
+  end
 
-    File.open(WS_FILE, 'w') { |f| f.write @rows.to_yaml }
-    Logger.info "#{@rows.size} Worksheet rows written to file: #{WS_FILE}"
+  def write_worksheet_rows_to_file(rows)
+    File.open(WS_FILE, 'w') { |f| f.write rows.to_yaml }
+    Logger.info "#{rows.size} Worksheet rows written to file: #{WS_FILE}"
   end
 
   def load_worksheet
-    @config.local ? load_worksheet_from_cache : load_worksheet_from_net
+    if @config.local
+      @rows = load_worksheet_from_cache
+    else
+      @rows = load_worksheet_from_net(
+        @config['account'],
+        @config['password'],
+        @config['spreadsheet_key'])
+      write_worksheet_rows_to_file(@rows)
+    end
+
     Logger.info 'done'
     Logger.debug "Worksheet contents (#{@rows.size} rows)\n=================="
   end
 
-  def filename(contact_name)
-    I18n.enforce_available_locales = false
-    I18n.locale = :da
-    I18n.transliterate contact_name
-  end
-
-  def generate_vcards
-    employee_rows.each do |num|
+  def generate_contacts
+    contacts = employee_rows.map do |num|
       contact = Contact.new(@config, @rows[num], num)
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
-      Logger.info "Skipping invalid: #{contact.pretty_print}" unless contact.valid?
-      Logger.info "Skipping resigned: #{contact.pretty_print}" if contact.resigned?
+      Logger.info "Skipping invalid: #{contact.pretty}" unless contact.valid?
+      Logger.info "Skipping resigned: #{contact.pretty}" if contact.resigned?
 
       next unless contact.valid? && !contact.resigned?
+      contact
+    end.compact
+    contacts
+  end
 
-      filename = "vcards/#{filename(contact.name)}.vcf"
-      File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
-        f.write(contact.to_vcard)
-        Logger.debug "wrote vcard for #{contact.pretty_print(:short)}"
-      end
-    end
+  def generate_vcards(contacts)
+    contacts.each(&:write_to_file)
   end
 
   # fetching the Gravatar fotos for each mail address in `gravatar_email_suffix`
-  def fetch_photos
-    employee_rows.each do |num|
-      contact = Contact.new(@config, @rows[num], num)
+  def fetch_photos(contacts)
+    return if @config.local
+    contacts.each do |contact|
       if contact.valid?
         Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .cache/#{contact.initials}.jpg `
@@ -134,7 +97,7 @@ class Worksheeter
   def build_instructions
     filename    = 'INSTRUCTIONS.erb.md'
     erb_binding = binding
-    @spreadsheet_key = @config.conf['spreadsheet_key']
+    @spreadsheet_key = @config['spreadsheet_key']
     template = ERB.new(File.read(filename), nil, '<>')
     contents = template.result(erb_binding)
 
@@ -179,21 +142,26 @@ class VcardBuilder
   end
 
   def initialize
-    @conf = Conf.new
+    @conf = ConfigReader.new.read_config('config.yml')
     # options will be added to @conf
     parse_options
+    @conf.ensure_required_params
 
     Logger.info 'Verbose setting selected. Writing extra info'
     Logger.debug 'Even more verbose setting selected. Writing even more info'
-    Logger.info '--local set. Using cache instead of making new requests' if @conf.local
+    Logger.info '--local set. Using cache instead of http requests' if @conf.local
+  end
 
+  def build
     ws = Worksheeter.new(@conf)
     puts 'Loading worksheet...'
     ws.load_worksheet
+    puts 'Generate contacts..'
+    contacts = ws.generate_contacts
     puts 'Fetching photos..'
-    ws.fetch_photos unless @conf.local
+    ws.fetch_photos(contacts)
     puts 'Generating vcards..'
-    ws.generate_vcards
+    ws.generate_vcards(contacts)
     ws.build_instructions
     puts 'Writing zip file..'
     ws.zip_folder
@@ -201,4 +169,4 @@ class VcardBuilder
   end
 end
 
-VcardBuilder.new
+VcardBuilder.new.build
