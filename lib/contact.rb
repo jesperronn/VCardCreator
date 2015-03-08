@@ -38,10 +38,13 @@ class Contact
   alias_method :resigned?, :resigned
 
   def initialize(config, row, num)
+    # convert the columns array of hashes to one hash for easy lookup
+    cols = config.columns.inject(:merge)
     unless row.nil?
       INITIAL_PROPS.each do |prop|
-        fail "unknown config property '#{prop}'" unless config.columns[prop]
-        send "#{prop}=", row[config.columns[prop]]
+        fail "unknown config property '#{prop}'" unless cols[prop]
+
+        send "#{prop}=", row[cols[prop].to_i]
       end
     end
 

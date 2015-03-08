@@ -17,45 +17,6 @@ Dir[__dir__ + '/lib/*.rb'].each do |f|
   require_relative filename
 end
 
-# Configuration class takes care of all config
-class Conf
-  Logger.info 'Loading config from file'
-  attr_accessor :columns, :start_row, :worksheet, :resigned_contacts,
-                :zip_file_name, :conf, :local
-
-  def initialize
-    # columns for this spreadsheet (0-index) OR you can use letters :A-:Z
-    @columns  = {
-      first_name:  ColumnIndexConvert.convert(:D),
-      last_name:   ColumnIndexConvert.convert(:E),
-      birthday:    ColumnIndexConvert.convert(:G),
-      phone:       ColumnIndexConvert.convert(:N),
-      alt_phone:   ColumnIndexConvert.convert(:O),
-      initials:    ColumnIndexConvert.convert(:F),
-      start_date:  ColumnIndexConvert.convert(:P),
-      resign_date: ColumnIndexConvert.convert(:Q),
-      linkedin:    ColumnIndexConvert.convert(:AD),
-      skype:       ColumnIndexConvert.convert(:AE),
-      jabber:      ColumnIndexConvert.convert(:AF),
-      twitter:     ColumnIndexConvert.convert(:AG)
-    }
-    # first content rows: (index is 0-based)
-    @start_row = 2
-
-    ## initials of resigned employees -- will be ignored and not generated
-    @resigned_contacts     = %w()
-
-    @zip_file_name = 'nineconsult-vcards'
-    load_config_file
-  end
-
-  def load_config_file
-    # APP_config contains username/password to Google account
-    @conf = YAML.load_file('config.yml')
-    Logger.info "loaded config (#{conf.size} lines)"
-  end
-end
-
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
 class Worksheeter
@@ -94,9 +55,9 @@ class Worksheeter
       @rows = load_worksheet_from_cache
     else
       @rows = load_worksheet_from_net(
-        @config.conf['account'],
-        @config.conf['account_password'],
-        @config.conf['spreadsheet_key'])
+        @config['account'],
+        @config['password'],
+        @config['spreadsheet_key'])
       write_worksheet_rows_to_file(@rows)
     end
 
@@ -136,7 +97,7 @@ class Worksheeter
   def build_instructions
     filename    = 'INSTRUCTIONS.erb.md'
     erb_binding = binding
-    @spreadsheet_key = @config.conf['spreadsheet_key']
+    @spreadsheet_key = @config['spreadsheet_key']
     template = ERB.new(File.read(filename), nil, '<>')
     contents = template.result(erb_binding)
 
@@ -181,9 +142,10 @@ class VcardBuilder
   end
 
   def initialize
-    @conf = Conf.new
+    @conf = ConfigReader.new.read_config('config.yml')
     # options will be added to @conf
     parse_options
+    @conf.ensure_required_params
 
     Logger.info 'Verbose setting selected. Writing extra info'
     Logger.debug 'Even more verbose setting selected. Writing even more info'
