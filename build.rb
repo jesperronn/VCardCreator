@@ -20,8 +20,6 @@ end
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
 class Worksheeter
-  WS_FILE = '.cache/_worksheet.yml'
-
   def initialize(config)
     @config = config
     FileUtils.mkdir_p 'vcards'
@@ -30,7 +28,7 @@ class Worksheeter
 
   def load_worksheet_from_cache
     Logger.info 'Load the worksheet from disk'
-    YAML.load_file(WS_FILE)
+    YAML.load_file(@config['cache_file_name'])
   end
 
   def load_worksheet_from_net(account, pw, key)
@@ -46,8 +44,9 @@ class Worksheeter
   end
 
   def write_worksheet_rows_to_file(rows)
-    File.open(WS_FILE, 'w') { |f| f.write rows.to_yaml }
-    Logger.info "#{rows.size} Worksheet rows written to file: #{WS_FILE}"
+    filename = @config['cache_file_name']
+    File.open(filename, 'w') { |f| f.write rows.to_yaml }
+    Logger.info "#{rows.size} Worksheet rows written to file: #{filename}"
   end
 
   def load_worksheet
