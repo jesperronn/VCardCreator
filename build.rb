@@ -29,25 +29,25 @@ class Worksheeter
   end
 
   def load_worksheet_from_cache
-    Logger.info 'Load the worksheet from disk'
+    Loggr.info 'Load the worksheet from disk'
     YAML.load_file(WS_FILE)
   end
 
   def load_worksheet_from_net(account, pw, key)
-    Logger.info "logs in for #{account}"
+    Loggr.info "logs in for #{account}"
     session = GoogleSpreadsheet.login(account, pw)
 
-    Logger.info "retrieve the worksheet key #{key}"
+    Loggr.info "retrieve the worksheet key #{key}"
     worksheet = session.spreadsheet_by_key(key).worksheets[0]
 
-    Logger.info "Worksheet title: #{worksheet.title}"
+    Loggr.info "Worksheet title: #{worksheet.title}"
     puts 'Fetching rows..'
     worksheet.rows
   end
 
   def write_worksheet_rows_to_file(rows)
     File.open(WS_FILE, 'w') { |f| f.write rows.to_yaml }
-    Logger.info "#{rows.size} Worksheet rows written to file: #{WS_FILE}"
+    Loggr.info "#{rows.size} Worksheet rows written to file: #{WS_FILE}"
   end
 
   def load_worksheet
@@ -61,8 +61,8 @@ class Worksheeter
       write_worksheet_rows_to_file(@rows)
     end
 
-    Logger.info 'done'
-    Logger.debug "Worksheet contents (#{@rows.size} rows)\n=================="
+    Loggr.info 'done'
+    Loggr.debug "Worksheet contents (#{@rows.size} rows)\n=================="
   end
 
   def generate_contacts
@@ -70,8 +70,8 @@ class Worksheeter
       contact = Contact.new(@config, @rows[num], num)
       # only create vcards for the "valid" rows in spreadsheet:
       # valid contacts must have name and email present
-      Logger.info "Skipping invalid: #{contact.pretty}" unless contact.valid?
-      Logger.info "Skipping resigned: #{contact.pretty}" if contact.resigned?
+      Loggr.info "Skipping invalid: #{contact.pretty}" unless contact.valid?
+      Loggr.info "Skipping resigned: #{contact.pretty}" if contact.resigned?
 
       next unless contact.valid? && !contact.resigned?
       contact
@@ -88,7 +88,7 @@ class Worksheeter
     return if @config.local
     contacts.each do |contact|
       if contact.valid?
-        Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
+        Loggr.info "fetching #{contact.initials}: #{contact.photo_url}"
         `curl -s #{contact.photo_url} > .cache/#{contact.initials}.jpg `
       end
     end
@@ -122,11 +122,11 @@ class VcardBuilder
       # Set a banner, displayed at the top of the help screen.
       opts.banner = 'Usage: .build.rb [options] '
       opts.on('-v', '--verbose', 'Output more information') do
-        Logger.allow_info = true
+        Loggr.allow_info = true
       end
       opts.on('--debug', 'Output even more information') do
-        Logger.allow_info = true
-        Logger.allow_debug = true
+        Loggr.allow_info = true
+        Loggr.allow_debug = true
       end
       opts.on('--local', 'Use local cached photos and worksheet') do
         @conf.local = true
@@ -147,9 +147,9 @@ class VcardBuilder
     parse_options
     @conf.ensure_required_params
 
-    Logger.info 'Verbose setting selected. Writing extra info'
-    Logger.debug 'Even more verbose setting selected. Writing even more info'
-    Logger.info '--local set. Using cache instead of http requests' if @conf.local
+    Loggr.info 'Verbose setting selected. Writing extra info'
+    Loggr.debug 'Even more verbose setting selected. Writing even more info'
+    Loggr.info '--local set. Using cache instead of http requests' if @conf.local
   end
 
   def build

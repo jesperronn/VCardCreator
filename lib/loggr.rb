@@ -1,11 +1,11 @@
 # log via this class
 # USAGE
 #
-# Logger.allow_debug = true # set this once
+# Loggr.allow_debug = true # set this once
 #
-# Logger.info "text to log"
+# Loggr.info "text to log"
 #
-class Logger
+class Loggr
   class << self
     attr_accessor :allow_debug, :allow_info
     def info(s)

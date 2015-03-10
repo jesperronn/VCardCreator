@@ -95,7 +95,7 @@ class Contact
   def write_to_file
     File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
       f.write(to_vcard)
-      Logger.debug "wrote vcard for #{pretty(:short)}"
+      Loggr.debug "wrote vcard for #{pretty(:short)}"
     end
   end
 
