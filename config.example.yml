@@ -3,16 +3,16 @@
 columns:
   - :first_name:  "D"
   - :last_name:   "E"
-  - :birthday:    "G"
-  - :phone:       "N"
-  - :alt_phone:   "O"
   - :initials:    "F"
-  - :start_date:  "P"
-  - :resign_date: "Q"
-  - :linkedin:    "AD"
-  - :skype:       "AE"
-  - :jabber:      "AF"
-  - :twitter:     "AG"
+  - :birthday:    "G"
+  - :phone:       "L"
+  - :alt_phone:   "M"
+  - :start_date:  "N"
+  - :resign_date: "O"
+  - :linkedin:    "U"
+  - :skype:       "V"
+  - :jabber:      "W"
+  - :twitter:     "X"
 
 # first content rows: (index is 0-based)
 start_row: 2
