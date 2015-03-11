@@ -6,4 +6,4 @@ rvm:
 cache: bundler
 script:
   - bundle exec rubocop
-  - cucumber
+  - bundle exec cucumber

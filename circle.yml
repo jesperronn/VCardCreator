@@ -6,4 +6,4 @@ test:
   pre:
     - bundle exec rubocop
   override:
-    - cucumber
+    - bundle exec cucumber
