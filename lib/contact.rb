@@ -88,13 +88,14 @@ class Contact
     out << '>'
   end
 
-  def to_vcard
-    VCard.new(self).to_vcard
+  def to_vcard(photo_folder)
+    VCard.new(self, photo_folder).to_vcard
   end
 
-  def write_to_file
-    File.open(filename, 'w',  external_encoding: Encoding::ISO_8859_1) do |f|
-      f.write(to_vcard)
+  def write_to_file(config)
+    File.open("#{config.output_folder}/#{filename}", 'w',
+              external_encoding: Encoding::ISO_8859_1) do |f|
+      f.write(to_vcard(config.photo_cache))
       Logger.debug "wrote vcard for #{pretty(:short)}"
     end
   end
@@ -108,6 +109,6 @@ class Contact
   def filename
     I18n.enforce_available_locales = false
     I18n.locale = :da
-    I18n.transliterate "vcards/#{name}.vcf"
+    I18n.transliterate "#{name}.vcf"
   end
 end

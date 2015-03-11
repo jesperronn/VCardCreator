@@ -4,3 +4,4 @@ config.nineconsult.yml
 .DS_Store
 .cache
 .idea
+coverage

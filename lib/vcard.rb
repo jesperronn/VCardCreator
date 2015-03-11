@@ -3,8 +3,9 @@
 class VCard
   @country_code = '+45'
 
-  def initialize(contact)
+  def initialize(contact, photo_folder)
     @contact = contact
+    @photo_folder  = photo_folder
   end
 
   def twitter
@@ -49,7 +50,7 @@ class VCard
   end
 
   def photo
-    filename = ".cache/#{@contact.initials}.jpg"
+    filename = "#{@photo_folder}/#{@contact.initials}.jpg"
     # puts "#{@contact.initials} exists? #{File.exists?(filename)}"
     return unless File.exist?(filename)
     file_contents = File.read(filename)
