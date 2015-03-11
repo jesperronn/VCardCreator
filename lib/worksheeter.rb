@@ -1,15 +1,19 @@
+# encoding: UTF-8
+require 'rubygems'
+require 'google_spreadsheet'
+
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
 class Worksheeter
   def initialize(config)
     @config = config
-    FileUtils.mkdir_p 'vcards'
-    FileUtils.mkdir_p '.cache'
+    FileUtils.mkdir_p config.output_folder
+    FileUtils.mkdir_p config.photo_cache
   end
 
   def load_worksheet_from_cache
     Logger.info 'Load the worksheet from disk'
-    YAML.load_file(@config['cache_file_name'])
+    YAML.load_file(@config.cache_file_name)
   end
 
   def load_worksheet_from_net(account, pw, key)
@@ -60,17 +64,16 @@ class Worksheeter
   end
 
   def generate_vcards(contacts)
-    contacts.each(&:write_to_file)
+    contacts.each { |c| c.write_to_file(@config) }
   end
 
   # fetching the Gravatar fotos for each mail address in `gravatar_email_suffix`
   def fetch_photos(contacts)
     return if @config.local
     contacts.each do |contact|
-      if contact.valid?
-        Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
-        `curl -s #{contact.photo_url} > .cache/#{contact.initials}.jpg `
-      end
+      next unless contact.valid?
+      Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
+      `curl -s #{contact.photo_url} > #{@config.photo_cache}/#{contact.initials}.jpg`
     end
   end
 
@@ -81,13 +84,13 @@ class Worksheeter
     template = ERB.new(File.read(filename), nil, '<>')
     contents = template.result(erb_binding)
 
-    File.open("vcards/#{filename.gsub('erb.', '')}", 'w') do |f|
+    File.open("#{@config.output_folder}/#{filename.gsub('erb.', '')}", 'w') do |f|
       f.write(contents)
     end
   end
 
   def zip_folder
-    `zip -9 #{ @config.zip_file_name }-#{ Date.today.to_s  }.zip vcards/* `
+    `zip -9 #{ @config.zip_file_name }-#{ Date.today.to_s  }.zip #{ @config.output_folder }/*`
   end
 
   def employee_rows

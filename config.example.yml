@@ -23,6 +23,8 @@ resigned_contacts:
 
 zip_file_name: nineconsult-vcards
 cache_file_name: .cache/_worksheet.yml
+photo_cache: .cache/photos
+output_folder: vcards
 
 # key from your spreadsheet. In the URL, its the part that says "key= ..."
 # example: if the URL is https://docs.google.com//spreadsheet/ccc?key=AaaaaaaaaBcccccc&hl=da#gid=0

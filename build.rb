@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
 require 'rubygems'
-require 'google_spreadsheet'
 require 'fileutils'
 require 'digest/md5'
 require 'erb'
@@ -43,8 +42,8 @@ class VcardBuilder
     optparse.parse!
   end
 
-  def initialize
-    @conf = ConfigReader.new.read_config('config.yml')
+  def initialize(config_filename)
+    @conf = ConfigReader.new.read_config(config_filename)
     # options will be added to @conf
     parse_options
     @conf.ensure_required_params
@@ -71,4 +70,4 @@ class VcardBuilder
   end
 end
 
-VcardBuilder.new.build
+VcardBuilder.new('config.yml').build
