@@ -72,8 +72,9 @@ class Worksheeter
     return if @config.local
     contacts.each do |contact|
       next unless contact.valid?
+      filename = "#{@config.photo_cache}/#{contact.initials}.jpg"
       Logger.info "fetching #{contact.initials}: #{contact.photo_url}"
-      `curl -s #{contact.photo_url} > #{@config.photo_cache}/#{contact.initials}.jpg`
+      `curl -s #{contact.photo_url} > #{filename}`
     end
   end
 
@@ -90,7 +91,8 @@ class Worksheeter
   end
 
   def zip_folder
-    `zip -9 #{ @config.zip_file_name }-#{ Date.today.to_s  }.zip #{ @config.output_folder }/*`
+    src =  "#{ @config.output_folder }/*"
+    `zip -9 #{ @config.zip_file_name }-#{ Date.today.to_s  }.zip #{ src }`
   end
 
   def employee_rows
