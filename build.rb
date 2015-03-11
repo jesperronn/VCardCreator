@@ -23,11 +23,11 @@ class VcardBuilder
       # Set a banner, displayed at the top of the help screen.
       opts.banner = 'Usage: .build.rb [options] '
       opts.on('-v', '--verbose', 'Output more information') do
-        Logger.allow_info = true
+        Loggr.allow_info = true
       end
       opts.on('--debug', 'Output even more information') do
-        Logger.allow_info = true
-        Logger.allow_debug = true
+        Loggr.allow_info = true
+        Loggr.allow_debug = true
       end
       opts.on('--local', 'Use local cached photos and worksheet') do
         @conf.local = true
@@ -48,9 +48,9 @@ class VcardBuilder
     parse_options
     @conf.ensure_required_params
 
-    Logger.info 'Verbose setting selected. Writing extra info'
-    Logger.debug 'Even more verbose setting selected. Writing even more info'
-    Logger.info '--local set. Using cache instead of http requests' if @conf.local
+    Loggr.info 'Verbose setting selected. Writing extra info'
+    Loggr.debug 'Even more verbose setting selected. Writing even more info'
+    Loggr.info '--local set. Using cache instead of http requests' if @conf.local
   end
 
   def build

@@ -96,7 +96,7 @@ class Contact
     File.open("#{config.output_folder}/#{filename}", 'w',
               external_encoding: Encoding::ISO_8859_1) do |f|
       f.write(to_vcard(config.photo_cache))
-      Logger.debug "wrote vcard for #{pretty(:short)}"
+      Loggr.debug "wrote vcard for #{pretty(:short)}"
     end
   end
 

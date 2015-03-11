@@ -22,10 +22,10 @@ class ConfigReader
   end
 
   def load_config_file(filename)
-    Logger.info 'Loading config from file'
+    Loggr.info 'Loading config from file'
     # APP_config contains username/password to Google account
     conf = YAML.load_file(filename)
-    Logger.info "loaded config (#{conf.size} lines)"
+    Loggr.info "loaded config (#{conf.size} lines)"
     conf
   end
 end
