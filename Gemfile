@@ -1,5 +1,5 @@
 source 'http://rubygems.org'
-gem 'google-spreadsheet-ruby'
+gem 'google-spreadsheet-ruby', '0.3.1'
 gem 'i18n'
 
 group :test do

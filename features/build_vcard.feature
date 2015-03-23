@@ -25,6 +25,10 @@ resigned_contacts:
   -
 
 zip_file_name: vcardbuilder-vcards
+cache_file_name: .cache/worksheet.yml
+photo_cache: .cache/photos
+output_folder: vcards
+
 spreadsheet_key: 0AuL6dmTSZWRVdEtnUUlKM1ppM25HTTFkVVJYZXhrV3c
 account: example@gmail.com
 password: "my_google_password"
@@ -86,6 +90,6 @@ password: "my_google_password"
   - 'my-jabber-name'
   - "@pshoff"
     """
-    When I run `../../build.sh config_test.yml`
+    When I run `build --config config_test.yml --local`
     Then the output should contain "loading config file"
     Then I should see a file named "vcards/Seymor Hoffmann.vcf"

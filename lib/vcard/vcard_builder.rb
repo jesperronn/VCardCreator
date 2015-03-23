@@ -1,6 +1,11 @@
+require 'ostruct'
+
 # slurp command line options and build the vcards
 class VcardBuilder
   def parse_options
+    options = {
+      filename: 'config.yml'
+    }
     optparse = OptionParser.new do|opts|
       # Set a banner, displayed at the top of the help screen.
       opts.banner = 'Usage: .build.rb [options] '
@@ -12,7 +17,10 @@ class VcardBuilder
         Loggr.allow_debug = true
       end
       opts.on('--local', 'Use local cached photos and worksheet') do
-        @conf.local = true
+        options[:local] = true
+      end
+      opts.on('-c', '--config FILE', 'config file (default "config.yml")') do |fn|
+        options[:filename] = fn
       end
 
       opts.on('-h', '--help', 'Prints this help') do
@@ -22,17 +30,20 @@ class VcardBuilder
     end
     # parse the command line arguments
     optparse.parse!
+
+    @conf = ConfigReader.new.read_config(options)
+    @conf.ensure_required_params
   end
 
-  def initialize(config_filename)
-    @conf = ConfigReader.new.read_config(config_filename)
+  def initialize
+    @conf = OpenStruct.new
+
     # options will be added to @conf
     parse_options
-    @conf.ensure_required_params
 
     Loggr.info 'Verbose setting selected. Writing extra info'
     Loggr.debug 'Even more verbose setting selected. Writing even more info'
-    Loggr.info '--local set. Using cache instead of http requests' if @conf.local
+    Loggr.info '--local set. Using cache instead of http requests' if @conf[:local]
   end
 
   def build
