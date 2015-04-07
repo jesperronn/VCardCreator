@@ -15,10 +15,11 @@ class Worksheeter
     file = @config.cache_file_name
     Loggr.info 'Load the worksheet from disk'
     fail "Missing file '#{file}' in #{`pwd`}" unless File.exist?(file)
+    contents = File.read(file)
     Loggr.debug '====file contents: ===='
-    Loggr.debug File.read(file)
+    Loggr.debug contents
     Loggr.debug '====end file ===='
-    YAML.load_file(file)
+    YAML.load(contents)
   end
 
   def load_worksheet_from_net(account, pw, key)
