@@ -103,7 +103,7 @@ class Contact
   private
 
   def invalid?
-    [@initials, @first_name, @last_name].any? { |v| v.nil? || v.empty? }
+    [@initials, @first_name, @last_name].any? { |v| v.nil? || v.to_s.empty? }
   end
 
   def filename
