@@ -93,30 +93,33 @@ password: "my_google_password"
     * the output should contain "Loading config from file"
     * a file named "vcards/Philip Seymor Hoffmann.vcf" should exist
     * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
-    """
-    BEGIN:VCARD
-    VERSION:3.0
-    PROFILE:VCARD
-    N;CHARSET=iso-8859-1:Hoffmann;Philip Seymor
-    FN;CHARSET=iso-8859-1: Philip Seymor Hoffmann
-    ORG:Nine A/S
-    """
+      """
+      BEGIN:VCARD
+      VERSION:3.0
+      PROFILE:VCARD
+      N;CHARSET=iso-8859-1:Hoffmann;Philip Seymor
+      FN;CHARSET=iso-8859-1: Philip Seymor Hoffmann
+      ORG:Nine A/S
+      """
     * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
-    """
-    TEL;type=CELL;type=VOICE;type=pref: 555-cellphone
-    TEL;type=HOME;type=VOICE: 555-alt-phone
-    EMAIL:sh@nine.dk
-    BDAY:1967-07-13
-    """
+      """
+      TEL;type=CELL;type=VOICE;type=pref: 555-cellphone
+      TEL;type=HOME;type=VOICE: 555-alt-phone
+      EMAIL:sh@nine.dk
+      BDAY:1967-07-13
+      """
     * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
-    """
-    X-SOCIALPROFILE;type=linkedin:http://linkedin.com/in/philip-seymor
-    X-SOCIALPROFILE;type=twitter:http://twitter.com/#!/my-twitter-name
-    item1.IMPP;X-SERVICE-TYPE=Skype:skype:my-skype-name
-    """
-    * the file "vcards/Philip Seymor Hoffmann.vcf" should contain "NOTE: Start date - "
+      """
+      X-SOCIALPROFILE;type=linkedin:http://linkedin.com/in/philip-seymor
+      X-SOCIALPROFILE;type=twitter:http://twitter.com/#!/my-twitter-name
+      item1.IMPP;X-SERVICE-TYPE=Skype:skype:my-skype-name
+      """
     * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
-    """
-    PHOTO;ENCODING=b;TYPE=JPEG:
-    END:VCARD
-    """
+      """
+      NOTE: Start date -
+      """
+    * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
+      """
+      PHOTO;ENCODING=b;TYPE=JPEG:
+      END:VCARD
+      """
