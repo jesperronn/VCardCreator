@@ -4,7 +4,7 @@ Feature: Build a VCard
   @announce
   Scenario: One Simple vcard
     Given a file named "config_test.yml" with:
-    """
+"""yml
 columns:
   - :first_name:  "D"
   - :last_name:   "E"
@@ -32,17 +32,19 @@ output_folder: vcards
 spreadsheet_key: 0AuL6dmTSZWRVdEtnUUlKM1ppM25HTTFkVVJYZXhrV3c
 account: example@gmail.com
 password: "my_google_password"
-    """
+"""
 
     And a file named ".cache/worksheet.yml" with:
-    """
+"""yaml
 ---
 - - No.
   - Title
+  - ''
   - First name
   - Last name
   - email
   - Birthday
+  - Age
   - Address
   - Postal code
   - City
@@ -56,7 +58,6 @@ password: "my_google_password"
   - ''
   - ''
   - ''
-  - ''
   - Linkedin link
   - Skype ID
   - jabber id (chat)
@@ -64,30 +65,58 @@ password: "my_google_password"
 - - '1'
   - Front desk clerk
   - ''
-  - Seymor
+  - Philip Seymor
   - Hoffmann
   - sh
-  - 10/01/1910
+  - 13/07/1967
   - '1110 Memory lane'
   - 90210
   - Beverly Hills
-  - '555-3344'
   - ''
-  - 01/07/2007
+  - '555-cellphone'
+  - '555-alt-phone'
   - ''
-  -
-  -
-  -
-  -
-  -
-  -
   - ''
-  -
+  - ''
+  - ''
+  - ''
+  - ''
+  - ''
   - 'http://linkedin.com/in/philip-seymor'
   - 'my-skype-name'
   - 'my-jabber-name'
-  - "@pshoff"
-    """
+  - "@my-twitter-name"
+"""
     When I run `build --config config_test.yml --local --debug`
-    Then the output should contain "Loading config from file"
-    # Then I should see a file named "vcards/Seymor Hoffmann.vcf"
+
+    * the output should contain "Worksheet contents (2 rows)"
+    * the output should contain "Loading config from file"
+    * a file named "vcards/Philip Seymor Hoffmann.vcf" should exist
+    * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
+    """
+    BEGIN:VCARD
+    VERSION:3.0
+    PROFILE:VCARD
+    N;CHARSET=iso-8859-1:Hoffmann;Philip Seymor
+    FN;CHARSET=iso-8859-1: Philip Seymor Hoffmann
+    ORG:Nine A/S
+    """
+    * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
+    """
+    TEL;type=CELL;type=VOICE;type=pref: 555-cellphone
+    TEL;type=HOME;type=VOICE: 555-alt-phone
+    EMAIL:sh@nine.dk
+    BDAY:1967-07-13
+    """
+    * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
+    """
+    X-SOCIALPROFILE;type=linkedin:http://linkedin.com/in/philip-seymor
+    X-SOCIALPROFILE;type=twitter:http://twitter.com/#!/my-twitter-name
+    item1.IMPP;X-SERVICE-TYPE=Skype:skype:my-skype-name
+    """
+    * the file "vcards/Philip Seymor Hoffmann.vcf" should contain "NOTE: Start date - "
+    * the file "vcards/Philip Seymor Hoffmann.vcf" should contain:
+    """
+    PHOTO;ENCODING=b;TYPE=JPEG:
+    END:VCARD
+    """
