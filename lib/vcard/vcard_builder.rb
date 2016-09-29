@@ -2,6 +2,7 @@ require 'ostruct'
 
 # slurp command line options and build the vcards
 class VcardBuilder
+  # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
   def parse_options
     options = {
       filename: 'config.yml'
@@ -19,6 +20,9 @@ class VcardBuilder
       opts.on('--local', 'Use local cached photos and worksheet') do
         options[:local] = true
       end
+      opts.on('--offline', 'Use local cached photos and worksheet') do
+        options[:local] = true
+      end
       opts.on('-c', '--config FILE', 'config file (default "config.yml")') do |fn|
         options[:filename] = fn
       end
@@ -34,6 +38,7 @@ class VcardBuilder
     @conf = ConfigReader.new.read_config(options)
     @conf.ensure_required_params
   end
+  # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
   def initialize
     @conf = OpenStruct.new

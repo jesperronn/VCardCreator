@@ -1,6 +1,7 @@
 # encoding: UTF-8
 require 'rubygems'
-require 'google_spreadsheet'
+# require 'google_spreadsheet'
+require 'google_drive'
 
 # Worksheeter class reads configuration, and employees.
 # Then it generates a vcard for each employee
@@ -22,9 +23,12 @@ class Worksheeter
     YAML.load(contents)
   end
 
-  def load_worksheet_from_net(account, pw, key)
+  def load_worksheet_from_net(account, _pw, key)
     Loggr.info "logs in for #{account}"
-    session = GoogleSpreadsheet.login(account, pw)
+    #    session = GoogleSpreadsheet.login(account, pw)
+    # Creates a session. This will prompt the credential via command line for the
+    # first time and save it to config.json file for later usages.
+    session = GoogleDrive::Session.from_config('config.json')
 
     Loggr.info "retrieve the worksheet key #{key}"
     worksheet = session.spreadsheet_by_key(key).worksheets[0]

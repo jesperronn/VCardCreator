@@ -14,7 +14,7 @@ Created by Jesper Rønn-Jensen 2012-02-06
 
  1. Run `bundle install` (to install dependencies) -- first time only!
  2. Copy `config.example.yml` to `config.yml` and add your details
- 3. Run the script with `./build.rb` (or on windows `ruby build.rb`)
+ 3. Run the script with `bin/build --config config.yml` (or on windows `ruby build.rb`)
 
 
 ## Integration with iPhone/Mac addresbook
