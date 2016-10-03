@@ -2,8 +2,7 @@ require 'ostruct'
 # Configuration class takes care of all config
 Config = Struct.new(:columns, :start_row, :worksheet, :resigned_contacts,
                     :local, :cache_file_name, :zip_file_name, :photo_cache,
-                    :output_folder, :spreadsheet_key, :password,
-                    :filename) do
+                    :output_folder, :spreadsheet_key, :filename) do
   # make sure all required params are loaded from config
   REQUIRED = %i(columns start_row cache_file_name zip_file_name photo_cache
                 output_folder spreadsheet_key)

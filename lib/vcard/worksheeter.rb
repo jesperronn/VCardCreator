@@ -23,8 +23,7 @@ class Worksheeter
     YAML.load(contents)
   end
 
-  def load_worksheet_from_net(account, _pw, key)
-    Loggr.info "logs in for #{account}"
+  def load_worksheet_from_net(key)
     #    session = GoogleSpreadsheet.login(account, pw)
     # Creates a session. This will prompt the credential via command line for the
     # first time and save it to config.json file for later usages.
@@ -49,8 +48,6 @@ class Worksheeter
       @rows = load_worksheet_from_cache
     else
       @rows = load_worksheet_from_net(
-        @config['account'],
-        @config['password'],
         @config['spreadsheet_key'])
       write_worksheet_rows_to_file(@rows)
     end
