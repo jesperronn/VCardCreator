@@ -6,4 +6,3 @@ AllCops:
     - .photo_cache/**/*
     - vcards/**/*
     - vendor/**/*
-  RunRailsCops: false
