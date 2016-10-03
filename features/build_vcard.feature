@@ -30,8 +30,6 @@ photo_cache: .cache/photos
 output_folder: vcards
 
 spreadsheet_key: 0AuL6dmTSZWRVdEtnUUlKM1ppM25HTTFkVVJYZXhrV3c
-account: example@gmail.com
-password: "my_google_password"
 """
 
     And a file named ".cache/worksheet.yml" with:
