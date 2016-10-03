@@ -80,8 +80,12 @@ class Worksheeter
     contacts.each do |contact|
       next unless contact.valid?
       filename = "#{@config.photo_cache}/#{contact.initials}.jpg"
-      Loggr.info "fetching #{contact.initials}: #{contact.photo_url}"
-      `curl -s #{contact.photo_url} > #{filename}`
+      if contact.photo_url =~ /https?:/
+        Loggr.info "fetching #{contact.initials}: #{contact.photo_url}"
+        `curl -s #{contact.photo_url} > #{filename}`
+      else
+        Loggr.warn "Warning: No photo_url for #{contact.pretty(:short)}"
+      end
     end
   end
 

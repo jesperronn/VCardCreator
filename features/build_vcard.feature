@@ -18,6 +18,7 @@ columns:
   - :skype:       "V"
   - :jabber:      "W"
   - :twitter:     "X"
+  - :photo_url:   "Z"
 
 # first content rows: (index is 0-based)
 start_row: 1

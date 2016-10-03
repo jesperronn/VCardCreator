@@ -15,6 +15,7 @@ class Contact
     :jabber,
     :twitter,
     :linkedin,
+    :photo_url,
     :start_date,
     :birthday
   ]
@@ -29,6 +30,7 @@ class Contact
                 :jabber,
                 :twitter,
                 :linkedin,
+                :photo_url,
                 :start_date,
                 :birthday,
                 :org,
@@ -58,13 +60,6 @@ class Contact
   # valid contacts must have name and email present
   def valid?
     !invalid?
-  end
-
-  # returns a gravatar url based on the email address
-  def photo_url
-    mail_nine_dk = @email.strip.downcase + GRAVATAR_EMAIL_SUFFIX
-    mail_hash = Digest::MD5.hexdigest(mail_nine_dk)
-    "http://www.gravatar.com/avatar/#{mail_hash}?s=150"
   end
 
   # returns full email address

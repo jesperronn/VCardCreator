@@ -8,6 +8,10 @@
 class Loggr
   class << self
     attr_accessor :allow_debug, :allow_info
+    def warn(s)
+      puts '[WARN]  ' << s
+    end
+
     def info(s)
       puts '[INFO]  ' << s if allow_info
     end
