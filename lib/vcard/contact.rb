@@ -69,7 +69,8 @@ class Contact
   end
 
   def pretty(format = :long)
-    out = '#<' << self.class.to_s
+    out = []
+    out << %(#< #{self.class})
     props = case format
             when :short
               %i(initials name)
@@ -79,9 +80,10 @@ class Contact
               raise RuntimeError "format #{format} not recognized"
             end
     props.each do |prop|
-      out << ' @' << "#{prop}='#{send prop}'"
+      out << " @#{prop}='#{send prop}'"
     end
     out << '>'
+    out.join ''
   end
 
   def to_vcard(photo_folder)

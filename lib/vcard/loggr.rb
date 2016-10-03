@@ -14,11 +14,11 @@ class Loggr
     end
 
     def info(s)
-      puts '[INFO]  ' << s if allow_info
+      puts %([INFO]  #{s}) if allow_info
     end
 
     def debug(s)
-      puts '[DEBUG] ' << s if allow_debug
+      puts %([DEBUG] #{s}) if allow_debug
     end
   end
 end
