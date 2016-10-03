@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'ostruct'
 
 # slurp command line options and build the vcards
@@ -7,7 +8,7 @@ class VcardBuilder
     options = {
       filename: 'config.yml'
     }
-    optparse = OptionParser.new do|opts|
+    optparse = OptionParser.new do |opts|
       # Set a banner, displayed at the top of the help screen.
       opts.banner = 'Usage: .build.rb [options] '
       opts.on('-v', '--verbose', 'Output more information') do

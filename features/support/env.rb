@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'simplecov'
 SimpleCov.start
 SimpleCov.root(File.join(File.expand_path(__dir__), '..'))
