@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # configuration file reader.
 # can read and convert into the required format by
 # Config class
@@ -28,7 +29,7 @@ class ConfigReader
 
   def load_config_file(filename)
     Loggr.info 'Loading config from file'
-    fail "no file found at '#{filename}'" unless File.exist? filename
+    raise "no file found at '#{filename}'" unless File.exist? filename
     # APP_config contains username/password to Google account
     config_file = YAML.load_file(filename)
 

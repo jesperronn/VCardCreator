@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # VCard class must contain the actual generation of the card.
 # it should read values from a Contact object
 class VCard
@@ -5,7 +6,7 @@ class VCard
 
   def initialize(contact, photo_folder)
     @contact = contact
-    @photo_folder  = photo_folder
+    @photo_folder = photo_folder
   end
 
   def twitter
@@ -38,7 +39,7 @@ class VCard
 
   def birthday
     return '' if @contact.birthday.empty?
-    "BDAY:#{ Date.parse(@contact.birthday) }"
+    "BDAY:#{Date.parse(@contact.birthday)}"
   end
 
   # put anything in the note that you see fit.

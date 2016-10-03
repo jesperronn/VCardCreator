@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # ColumnIndexConverter can translate spreadsheet column definitions A.B.C..etc
 #
 # Usage: see bottom

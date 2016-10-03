@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # Generates a Contact class for each employee
 class Contact
   ORG                   = 'Nine A/S'
@@ -18,7 +19,7 @@ class Contact
     :photo_url,
     :start_date,
     :birthday
-  ]
+  ].freeze
 
   attr_accessor :name,
                 :first_name,
@@ -37,14 +38,14 @@ class Contact
                 :resigned,
                 :row_num
 
-  alias_method :resigned?, :resigned
+  alias resigned? resigned
 
   def initialize(config, row, num)
     # convert the columns array of hashes to one hash for easy lookup
     cols = config.columns.inject(:merge)
     unless row.nil?
       INITIAL_PROPS.each do |prop|
-        fail "unknown config property '#{prop}'" unless cols[prop]
+        raise "unknown config property '#{prop}'" unless cols[prop]
 
         send "#{prop}=", row[cols[prop].to_i]
       end
@@ -75,7 +76,7 @@ class Contact
             when :long
               %i(first_name last_name initials email row_num)
             else
-              fail RuntimeError "format #{format} not recognized"
+              raise RuntimeError "format #{format} not recognized"
             end
     props.each do |prop|
       out << ' @' << "#{prop}='#{send prop}'"

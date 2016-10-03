@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # log via this class
 # USAGE
 #

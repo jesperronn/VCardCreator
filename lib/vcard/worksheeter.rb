@@ -1,4 +1,5 @@
 # encoding: UTF-8
+# frozen_string_literal: true
 require 'rubygems'
 # require 'google_spreadsheet'
 require 'google_drive'
@@ -15,7 +16,7 @@ class Worksheeter
   def load_worksheet_from_cache
     file = @config.cache_file_name
     Loggr.info 'Load the worksheet from disk'
-    fail "Missing file '#{file}' in #{`pwd`}" unless File.exist?(file)
+    raise "Missing file '#{file}' in #{`pwd`}" unless File.exist?(file)
     contents = File.read(file)
     Loggr.debug '====file contents: ===='
     Loggr.debug contents
@@ -48,7 +49,8 @@ class Worksheeter
       @rows = load_worksheet_from_cache
     else
       @rows = load_worksheet_from_net(
-        @config['spreadsheet_key'])
+        @config['spreadsheet_key']
+      )
       write_worksheet_rows_to_file(@rows)
     end
 
@@ -102,8 +104,8 @@ class Worksheeter
   end
 
   def zip_folder
-    src =  "#{ @config.output_folder }/*"
-    `zip -9 #{ @config.zip_file_name }-#{ Date.today.to_s  }.zip #{ src }`
+    src = "#{@config.output_folder}/*"
+    `zip -9 #{ @config.zip_file_name }-#{ Date.today.to_s }.zip #{ src }`
   end
 
   def employee_rows
